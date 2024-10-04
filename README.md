@@ -70,6 +70,13 @@
 
 </details>
 
+<details>
+  
+<summary>포인트샵</summary>
+
+
+</details>
+
 # 주요 기능
 
 + ajax를 사용해 비동기 방식으로 배송지 관련 CRUD를 구현해 결제시 입력한 데이터를 유지시킨 상태로 배송지 등록,수정,삭제가 가능
