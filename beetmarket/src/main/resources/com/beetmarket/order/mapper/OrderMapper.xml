@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.beetmarket.order.mapper.OrderMapper"> 
+
+	<select id="orderList" resultType="com.beetmarket.order.vo.OrderVO">
+		select orderNo,goodsNo,orderState,orderDate,confirmDate, 
+			goodsName,goodsMainImage,orderPrice,dlvyCharge,optNo,optName,amount,reviewExist
+		from(
+			select rowNum rnum,orderNo,goodsNo,orderState,orderDate,confirmDate,
+				goodsName, goodsMainImage,orderPrice,dlvyCharge,optNo,optName,amount,reviewExist
+			from(
+				select 
+					 o.orderNo, o.goodsNo, o.orderState, o.orderDate,o.confirmDate, 
+					 g.goodsName, g.goodsMainImage,o.orderPrice, o.dlvyCharge, 
+					 o.goodsoptNo optNo, go.goodsoptName optName, o.amount,o.reviewExist
+				from orders o, goods g, goodsOption go
+				where (id=#{pageObject.accepter}) <!-- 일반 조건 -->
+				<!-- 검색 조건 -->
+				<include refid="goodsTitleSearch"/>
+				<include refid="orderDateSearch"/>
+				<include refid="orderStateSearch"/>
+				
+				<!-- 조인 조건 -->
+				 and (o.goodsNo = g.goodsNo) and (go.goodsoptNo(+) = o.goodsoptNo)
+				order by orderNo desc		
+			)
+		)
+		where rnum between #{pageObject.startRow} and #{pageObject.endRow} 	
+	</select>  
+	
+	<select id="totalRow" resultType="Long">
+		select count(*) from orders o, goods g 
+		where id=#{pageObject.accepter} <!-- 일반 조건 -->
+		<!-- 검색 조건 -->
+		<include refid="goodsTitleSearch"/>
+		<include refid="orderDateSearch"/>
+		<include refid="orderStateSearch"/>
+		and (o.goodsNo = g.goodsNo)
+	</select>
+	
+	<select id="adminTotalRow" resultType="Long">
+		select count(*) from orders o, goods g,member m where 1=1	
+		<!-- 검색 조건 -->		
+		<include refid="orderDateSearch"/>
+		<include refid="orderStateSearch"/>
+		<include refid="payWaySearch"/>
+		<include refid="goodsNoSearch"/>
+		<include refid="goodsTitleAdminSearch"/>
+		and (o.goodsNo = g.goodsNo) and (o.id = m.id)
+	</select>
+	
+	<select id="adminList" resultType="com.beetmarket.order.vo.OrderVO">
+		select  
+		    orderNo,goodsNo,orderState,orderDate,confirmDate,goodsName,store_name,
+		            orderPrice,dlvyCharge,id,name, memberTel,cancleReason,
+		            recipient,tel,addr,addrdetail,postNo,payWay,payDetail ,paymentKey
+		    from(
+		        select 
+		            rowNum rnum, orderNo,goodsNo,orderState,orderDate,confirmDate,goodsName,store_name,
+		            orderPrice,dlvyCharge,id,name, memberTel,cancleReason,
+		            recipient,tel,addr,addrdetail,postNo,payWay,payDetail ,paymentKey
+		            from( 
+		                select 
+		                    o.orderNo, o.goodsNo, o.orderState, o.orderDate,o.confirmDate,g.goodsName, s.store_name , 
+		                    o.orderPrice, o.dlvyCharge, o.id,m.name,m.tel as memberTel,o.cancleReason,
+		                    o.recipient, o.tel, o.addr, o.addrdetail,o.postNo, o.payWay,o.payDetail ,o.paymentKey
+		                    from orders o, goods g, member m , seller_hub s
+						where 1=1  
+							<!-- 검색 조건 -->		
+							<include refid="orderDateSearch"/>
+							<include refid="orderStateSearch"/>
+							<include refid="payWaySearch"/>
+							<include refid="goodsNoSearch"/>
+							<include refid="goodsTitleAdminSearch"/>
+		                    and (o.goodsNo = g.goodsNo) and (o.id = m.id) and (g.sell_no=s.sell_no)
+						order by orderNo desc 
+						 ) 
+		        )
+		 where rnum between #{pageObject.startRow} and #{pageObject.endRow} 
+	</select>
+	
+	<select id="getGoods" resultType="com.beetmarket.order.vo.OrderVO">
+		select goodsNo,goodsName,goodsMainImage,s.store_name from goods g,seller_hub s
+		where id=#{id} and g.sell_no=s.sell_no
+	</select>
+	
+	<!-- 상품 이름 검색 쿼리 -->
+	<sql id="goodsTitleSearch">
+		<if test="searchVO.searchWord != null and searchVO.searchWord != ''.toString()">
+			and (goodsName like '%' || #{searchVO.searchWord} || '%')
+		</if>
+	</sql>
+	
+	<!-- 상품 이름 검색 쿼리 -->
+	<sql id="goodsTitleAdminSearch">
+		<if test="searchVO.searchWord != null and searchVO.searchWord != ''.toString()">
+			and (
+			<!-- ~~/~~ 형태로 검색 한 경우 -->
+			<if test="searchVO.searchKey != null and searchVO.searchKey .length() == 2 and searchVO.searchWord.indexOf('/')>0">
+				<trim prefixOverrides="and">
+					and (name = #{searchVO.name})				
+					and (goodsName like '%' || #{searchVO.goodsName} || '%')		
+				</trim>		
+			</if>
+			<if test="searchVO.searchWord.indexOf('/') == -1">
+				<trim prefixOverrides="or">
+					<!-- key가 널일때 - 일반 리스트 or 관리자 리스트에서 key에 n이 있을때 -->
+					<if test="searchVO.searchKey  == null or searchVO.searchKey .indexOf('n')>=0">
+						or (goodsName like '%' || #{searchVO.searchWord} || '%')
+					</if>				
+					<if test="searchVO.searchKey  != null and searchVO.searchKey .indexOf('i')>=0">
+						or (name = #{searchVO.searchWord})
+					</if>
+				</trim>
+			</if>
+			)
+		</if>
+	</sql>
+	
+	<!-- 주문 날짜 검색 쿼리 -->
+	<sql id="orderDateSearch">		
+		and (trunc(orderDate) between #{searchVO.minDate} and #{searchVO.maxDate})		
+	</sql>
+	
+	<!-- 주문 상태 검색 쿼리 -->
+	<sql id="orderStateSearch">	
+		<if test="searchVO.orderStateSearch != null and searchVO.orderStateSearch != ''.toString()">	
+			and (
+				orderState = #{searchVO.orderStateSearch}
+				<if test="searchVO.orderState2 != null and searchVO.orderState2 != ''.toString()">
+				 or orderState = #{searchVO.orderState2}
+				</if>
+				)	
+		</if>	
+	</sql>
+	
+	<!-- 결제 방법 검색 쿼리 -->
+	<sql id="payWaySearch">	
+		<if test="searchVO.payWay != null and searchVO.payWay != ''.toString()">	
+			and (payWay = #{searchVO.payWay})	
+		</if>	
+	</sql>
+	
+	<!-- 상품 번호 검색 쿼리 -->
+	<sql id="goodsNoSearch">	
+		<if test="searchVO.goodsNo != null and searchVO.goodsNo != ''.toString()">	
+			and (g.goodsNo = #{searchVO.goodsNo})	
+		</if>	
+	</sql>
+	
+	<!-- 주문 상세보기 -->
+	<select id="view" resultType="com.beetmarket.order.vo.OrderVO">
+		select 
+			o.orderNo, o.goodsNo, o.orderState, o.orderDate,o.confirmDate,
+		    o.payWay, o.payDetail,  g.goodsName, g.goodsMainImage , g.goodssaverate , s.store_name,s.id,
+		    (select s.sale_rate from memberShip s,member m where m.id=o.id and (s.shipno = m.shipno)) sale_rate,    
+		    o.orderPrice,o.dlvyCharge,o.goodsoptNo optNo, go.goodsoptName optName, o.amount,
+		    o.dlvyName, o.recipient, o.tel, o.addr, o.postNo,o.dlvyMemo ,o.reviewExist,(
+                select (orderPrice/(1-discountRate/100))-orderprice from pointshopgoodsinfo pg,pointshopstock ps where stockNo=o.stockNo and pg.goodsid=ps.goodsid 
+            ) discount
+		from orders o, goods g, goodsOption go, seller_hub s
+    	where o.orderNo=#{orderNo} 
+    		and (o.goodsNo = g.goodsNo) and (go.goodsoptNo(+) = o.goodsoptNo) and (g.sell_no=s.sell_no)
+	</select>
+	
+	<!-- writeForm 상품의 데이터 가져오는 쿼리 -->
+	<select id="getGoodsList" resultType="com.beetmarket.order.vo.OrderVO">
+		select goodsNo,goodsName,goodsMainImage,store_name,goodsPrice,merchant_delivery,free_ship_limit,goodssaverate from(
+		<foreach collection="goodsNos" item="goodsNo" separator="union all" index="i">
+			select #{i} i,goodsNo,goodsName,goodsMainImage,s.store_name,goodsPrice,s.merchant_delivery,s.free_ship_limit,g.goodssaverate 
+   				from goods g, seller_hub s 
+			where goodsNo = #{goodsNo} and (g.sell_no = s.sell_no)
+		</foreach>
+		) order by i
+<!-- 		select goodsNo,goodsName,goodsMainImage,s.store_name,goodsPrice,s.merchant_delivery,s.free_ship_limit,g.goodssaverate -->
+<!--    			from goods g, seller_hub s -->
+<!-- 		where goodsNo in( -->
+<!-- 			<foreach collection="goodsNos" item="goodsNo" separator=","> -->
+<!-- 				#{goodsNo} -->
+<!-- 			</foreach> -->
+<!-- 			) and (g.sell_no = s.sell_no) -->
+	</select>
+	
+	<!-- writeForm 상품의 데이터 가져오는 쿼리 -->
+	<select id="getOptList" resultType="com.beetmarket.order.vo.OrderOptVO">	
+			select 	optNo,optName,optPrice,goodsNo from (
+			<foreach collection="optNos" item="optNo" separator="union all" index="i">				
+				select #{i} i,goodsoptNo optNo,goodsoptName optName,goodsoptPrice optPrice,goodsNo from goodsOption
+				where goodsoptNo = #{optNo,jdbcType=BIGINT}
+			</foreach>
+			) order by i
+	</select>
+	
+	<!-- 쿠폰 리스트 가져오기 -->
+	<select id="getCouponList" resultType="com.beetmarket.pointshop.vo.PointShopVO">
+		select distinct(g.goodsId),goodsImage,goodsName,discountRate,
+			(select count(*) from PointShopStock ss,PointShopOrder so where id=#{id} and g.goodsid=ss.goodsid and ss.stockno=so.stockno ) goodsStock
+			from PointShopStock s,PointShopOrder o,PointShopGoodsInfo g
+			where id=#{id} and category='쿠폰' and s.stockno=o.stockno and g.goodsId=s.goodsid and g.goodsid=s.goodsid
+	</select>
+	
+	<!-- 멤버쉽 적립율 가져오기 -->
+	<select id="getSale_rate" resultType="integer">
+		select s.sale_rate from membership s,member m where id=#{id} and m.shipno = s.shipno	
+	</select>
+	
+	<!-- 주문 등록 -->
+	<insert id="write">
+		<selectKey order="BEFORE" keyProperty="list[0].stockNo" resultType="Long">
+			select min(s.stockNo) from pointshopstock s,pointshoporder o 
+			where goodsid=#{list[0].goodsId} and id=#{list[0].id} and s.stockstate='판매완료' and s.stockno = o.stockno
+		</selectKey>
+		insert into orders(orderNo,dlvyName,recipient,tel,addr,addrDetail,postNo,stockNo,dlvyMemo,orderPrice,dlvyCharge,payWay,payDetail,id,goodsNo,goodsoptNo,amount,PAYMENTKEY)
+		select orders_seq.nextval,dlvy.*,#{list[0].stockNo,jdbcType=NUMERIC} stockNo,value.* from
+			(
+				 select
+				 	dlvyName,recipient,tel,addr,addrDetail,postNo 
+				 	from dlvyaddr
+				 	where dlvyaddrNo = #{list[0].dlvyAddrNo}
+			) dlvy
+			,(
+			<foreach collection="list" item="vo" separator="union all">
+				select 					
+					#{vo.dlvyMemo,jdbcType=VARCHAR},
+					#{vo.orderPrice} orderPrice,#{vo.dlvyCharge} dlvyCharge,
+					#{vo.payWay} payWay,#{vo.payDetail,jdbcType=CHAR} payDetail,#{vo.id} id,
+					#{vo.goodsNo} goodsNo,#{vo.optNo,jdbcType=NUMERIC} optNo,#{vo.amount} amount,
+					#{vo.paymentKey,jdbcType=VARCHAR} paymentKey
+				from dual
+			</foreach>
+		) value		
+	</insert>
+	
+	<!-- 배송지 변경 -->
+	<update id="dlvyUpdate">
+		update orders set dlvyName = #{dlvyName},recipient = #{recipient},tel = #{tel},addr = #{addr},addrDetail = #{addrDetail},postNo = #{postNo} where orderNo = #{orderNo}
+	</update>
+	
+	<!-- 주문 상태 변경 -->
+	<update id="stateUpdate">
+		update orders set orderState = #{vo.orderState} , cancleReason = #{vo.cancleReason,jdbcType=VARCHAR}
+			<!-- 구매 확정시 확정 날짜 업데이트 -->
+			<if test="vo.orderState.equals('구매확정')">
+				,confirmDate=sysdate
+			</if>	 
+			where orderNo 
+			in (
+				<foreach collection="orderNos" item="orderNo" separator=",">
+					#{orderNo}
+				</foreach>
+			)
+			
+	</update>
+	<!-- 해당 주문의 적립금 가져오기 -->
+	<select id="getSavings" resultType="Long">
+		select orderPrice*(goodssaverate+sale_rate)/100 from(
+		    select o.orderPrice,(
+		        select goodssaverate from goods where goodsNo=o.goodsNo
+		    ) goodssaverate,(
+		         select s.sale_rate from membership s,member m where m.id=o.id and m.shipno = s.shipno
+		    ) sale_rate 
+		    from orders o where orderNo=#{orderNo}
+		)
+	</select>
+	<!-- 요청 처리시 쿠폰 상태 변경 -->
+	<update id="refundCoupon" parameterType="hashmap">
+		<selectKey keyProperty="couponNo" order="BEFORE" resultType="Long">
+			select nvl(count(stockno),0) from orders where not orderstate = '요청처리' and stockNo = (select stockNo 
+			from orders where orderNo=#{orderNo})
+		</selectKey>
+		
+		<!-- 해당 쿠폰을 사용한 주문이 아직 있을때 -->
+		<if test="couponNo > 0">
+			update PointShopStock set stockState = '사용완료' where stockNo=(select stockNo 
+			from orders where orderNo=#{orderNo})
+		</if>
+		<!-- 해당 쿠폰을 사용한 주문이 없을떄 -->
+		<if test="couponNo == 0">
+			update PointShopStock set stockState = '판매완료' where stockNo=(select stockNo 
+			from orders where orderNo=#{orderNo})
+		</if>
+	</update>
+	<update id="refundCoupon2" parameterType="hashmap">
+		<selectKey keyProperty="couponNo" order="BEFORE" resultType="Long">
+			select nvl(count(stockno),0) from orders where not orderstate = '요청처리' and stockNo = (select stockNo 
+			from orders where orderNo=#{orderNo})
+		</selectKey>
+		
+		<!-- 해당 쿠폰을 사용한 주문이 아직 있을때 -->
+		<if test="couponNo > 0">
+			update orders set stockNo = null where orderNo=0
+		</if>
+		<!-- 해당 쿠폰을 사용한 주문이 없을떄 -->
+		<if test="couponNo == 0">
+			update orders set stockNo = null where stockNo = (select stockNo from orders where orderNo=#{orderNo})
+		</if>
+	</update>
+	<!-- 주문 삭제 -->
+	<delete id="delete">
+		delete from orders where orderNo = #{orderNo}
+	</delete>
+	
+	
+</mapper>

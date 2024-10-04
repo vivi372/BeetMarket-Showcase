@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="com.beetmarket.event.mapper.EventMapper">	
+  	<!-- 이벤트 리스트 -->
+  	<select id="list" resultType="com.beetmarket.event.vo.EventVO">
+  	select no, title, image, startDate, endDate
+  	 from(
+  		select rownum rnum, no, title, image, startDate, endDate
+  		from(
+	  		SELECT no, title, image, startDate, endDate
+	  		From event
+	  		<!-- 검색을 달아야한다. -->
+	  		<include refid="search"/>
+	  		order by no desc
+  		)
+  	 )
+  	where rnum between #{startRow} and #{endRow}
+  	</select>
+  	<!-- 이벤트 리스트 페이지 처리를 위한 전테 데이터 개수 가져오기 -->
+  	<select id="getTotalRow" resultType="Long">
+  		select count(*) from event 
+  		<!-- 검색을 달아야한다. -->
+  		<include refid="search" />
+  	</select>
+  	<!-- 이벤트 리스트의 검색 처리 -->
+  	<sql id="search">
+  		<if test="word != null and word != ''.toString()">
+  		where
+  			<!-- prefixOverrides -->
+  			<trim prefixOverrides="or">
+  			 <!-- 'test': 문자열(String), 't': 문자(char) -> 문자열 - toString()사용 -->
+  				<if test="key.indexOf('t')>=0">
+  					or title like '%' || #{word} || '%'
+  				</if>
+  				<if test="key.indexOf('c')>=0">
+  					or content like '%' || #{word} || '%'
+  				</if>
+  			</trim>
+  		</if>
+  	</sql>
+  	<!-- 이벤트 글보기 조회수 1증가 -->
+  	<!-- # {obj} 1.변수의 이름, 2.vo의 getter 이름, 3.Map의 key -->
+  	<!-- 이벤트 글보기 -->
+  	<select id="view" resultType="com.beetmarket.event.vo.EventVO">
+  		select no, title, content, startDate, endDate, writeDate, updateDate, image from event where no=#{no}
+  	</select>
+ 	<insert id="write" >
+ 	 <!-- 먼저 EventVO의 no에 setter를 이용해서 시퀀스에서 받아온 번호를 세팅해 준다. -->
+ 		<selectKey keyProperty="no" resultType="Long" order="BEFORE">
+ 			SELECT event_seq.nextval from dual
+ 		</selectKey>
+ 		insert into event(no, title, content, image, startDate, endDate, pw)
+ 		values(#{no}, #{title}, #{content},
+ 		<!-- 지원되는 JDBC 타입
+				VARCHAR: 문자열, INTEGER: 정수, BIGINT: 큰 정수
+				DOUBLE: 실수, DATE: 날짜, TIMESTAMP: 타임스탬프,
+				BOOLEAN: 논리형 -->
+ 		 #{image, jdbcType=VARCHAR}, #{startDate, jdbcType=DATE}, #{endDate, jdbcType=DATE}, #{pw})
+ 	</insert>
+ 	<!-- 이벤트 글수정 -->
+ 	<update id="update">
+ 	<![CDATA[
+ 		update event set title=#{title}, content=#{content}, startDate=#{startDate}, endDate=#{endDate} where pw=#{pw} and no=#{no}
+ 	]]>
+ 	</update>
+ 	<!-- 이벤트 글 -->
+ 	<delete id="delete">
+ 	<![CDATA[
+ 		delete from event where pw=#{pw} and no=#{no}
+ 	]]>
+ 	</delete>
+ 	<!-- 참여자 등록 -->
+	<insert id="apply">
+		<selectKey keyProperty="no" resultType="Long" order="BEFORE">
+ 			select subscriber_seq.nextval from dual
+ 		</selectKey>
+	    INSERT INTO subscriber(no, event_no, id, address)
+	    VALUES (#{no}, #{event_no, jdbcType=BIGINT},#{id, jdbcType=VARCHAR}, #{address, jdbcType=VARCHAR})
+	</insert>
+	<!-- 참여자 리스트 조회 -->
+	<select id="getSubscriberList" resultType="com.beetmarket.event.vo.SubscriberVO">
+	    SELECT g.id, application_date
+	    FROM subscriber g
+	    INNER JOIN event e ON g.event_no = e.no
+	    WHERE event_no = event_no
+	    ORDER BY application_date DESC
+	</select>
+    <select id="subscriber" parameterType="java.lang.Long" resultType="com.beetmarket.event.vo.SubscriberVO">
+        SELECT * FROM subscriber WHERE event_no = #{event_no}
+    </select>
+  </mapper>

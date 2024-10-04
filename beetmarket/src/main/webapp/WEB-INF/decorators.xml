@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE XML>
+<!-- 작성자 : 김승준 -->
+<!-- 작성일 : 2017-01-13 -->
+<!-- 꾸미기(레이아웃)에 대한 선언 -->
+<decorators defaultdir="/WEB-INF/views/decorator">
+	<!-- hello에 대한 요청이 들어오면 적용시키는 레이아웃 선언 -->
+	<decorator name="main" page="default_decorator.jsp">
+		<pattern>/main/*</pattern>
+		<pattern>/board/*</pattern>
+		<pattern>/notice/*</pattern>
+		<pattern>/info/*</pattern>
+		<pattern>/member/*</pattern>
+		<pattern>/category/*</pattern>
+		<pattern>/goods/*</pattern>
+		<pattern>/reserve/*</pattern>
+		<pattern>/dataroom/*</pattern>
+		<pattern>/room/*</pattern>
+		<pattern>/teacher/*</pattern>
+		<pattern>/schedule/*</pattern>
+		<pattern>/notice/*</pattern>
+		<pattern>/event/*</pattern>	
+		<pattern>/showdown/*</pattern>	
+		<pattern>/stock/*</pattern>	
+		<pattern>/pointShopOrder/*</pattern>	
+		<pattern>/basket/*</pattern>	
+		<pattern>/order/*</pattern>	
+		<pattern>/faq/*</pattern>
+		<pattern>/chatbot/*</pattern>	
+			
+
+	</decorator>
+	
+<!-- 	<decorator name="admin" page="admin_decorator.jsp"> -->
+<!-- 		<pattern>/admin/*</pattern> -->
+<!-- 	</decorator> -->
+	
+	<!-- 게시판의 대한 요청 레이아웃 선언 -->
+
+	<!-- 데코레이션에서 제외되는 요청을 선언 -->
+
+</decorators>

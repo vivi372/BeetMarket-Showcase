@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="com.beetmarket.stock.mapper.StockMapper">
+  
+  <select id="stockList" resultType="com.beetmarket.stock.vo.StockVO">
+  		select 
+  			 c.company_code, c.company_name, s.prdy_ctrt, s.stck_prpr 
+  		from 
+  			company c, stock_info s 
+  		where 
+  			c.company_code = s.company_code
+  </select>
+  
+<update id="updateStockInfo">
+    UPDATE stock_info
+    SET 
+        stck_prpr = #{stck_prpr},
+        prdy_vrss = #{prdy_vrss},
+        prdy_ctrt = #{prdy_ctrt},
+        acml_tr_pbmn = #{acml_tr_pbmn},
+        acml_vol = #{acml_vol},
+        stck_oprc = #{stck_oprc},
+        stck_hgpr = #{stck_hgpr},
+        stck_lwpr = #{stck_lwpr},
+        stck_mxpr = #{stck_mxpr},
+        stck_llam = #{stck_llam},
+        per = #{per},
+        pbr = #{pbr},
+        eps = #{eps},
+        bps = #{bps}
+    WHERE company_code = #{company_code}
+</update>
+
+<select id="getStockInfo" resultType="com.beetmarket.stock.vo.Stock_InfoVO">
+		select 
+			STOCK_INFO_NO,
+			COMPANY_CODE,
+			STCK_PRPR,
+			PRDY_VRSS,
+			PRDY_CTRT,
+			ACML_TR_PBMN,
+			ACML_VOL,
+			STCK_OPRC,
+			STCK_HGPR,
+			STCK_LWPR,
+			STCK_MXPR,
+			STCK_LLAM,
+			PER,
+			PBR,
+			EPS,
+			BPS
+		from 
+			stock_info 
+		where 
+			company_code = #{company_code}
+</select>
+  
+      <!-- stock_as_bi 업데이트 쿼리 -->
+    <update id="updateStockAsBi" parameterType="com.beetmarket.stock.vo.Stock_As_BiVO">
+        UPDATE stock_as_bi
+        SET 
+            askp1 = #{askp1},
+            askp2 = #{askp2},
+            askp3 = #{askp3},
+            askp4 = #{askp4},
+            askp5 = #{askp5},
+            bidp1 = #{bidp1},
+            bidp2 = #{bidp2},
+            bidp3 = #{bidp3},
+            bidp4 = #{bidp4},
+            bidp5 = #{bidp5},
+            askp_rsqn1 = #{askp_rsqn1},
+            askp_rsqn2 = #{askp_rsqn2},
+            askp_rsqn3 = #{askp_rsqn3},
+            askp_rsqn4 = #{askp_rsqn4},
+            askp_rsqn5 = #{askp_rsqn5},
+            bidp_rsqn1 = #{bidp_rsqn1},
+            bidp_rsqn2 = #{bidp_rsqn2},
+            bidp_rsqn3 = #{bidp_rsqn3},
+            bidp_rsqn4 = #{bidp_rsqn4},
+            bidp_rsqn5 = #{bidp_rsqn5},
+            checkDate = SYSDATE
+        WHERE company_code = #{company_code}
+    </update>
+  
+      <!-- 주식 매수/매도 호가 정보 가져오기 -->
+    <select id="getStockAsBi" resultType="com.beetmarket.stock.vo.Stock_As_BiVO">
+        SELECT askp1, askp2, askp3, askp4, askp5,
+               bidp1, bidp2, bidp3, bidp4, bidp5,
+               askp_rsqn1, askp_rsqn2, askp_rsqn3, askp_rsqn4, askp_rsqn5,
+               bidp_rsqn1, bidp_rsqn2, bidp_rsqn3, bidp_rsqn4, bidp_rsqn5,
+               total_askp_rsqn, total_bidp_rsqn, company_code, checkDate
+        FROM stock_as_bi
+        WHERE company_code = #{company_code}
+    </select>
+  
+  	<insert id="makeCash">
+	  	<selectKey keyProperty="CASH_NO" resultType="Long" order="BEFORE">
+	  	<!-- BoardVO의 no에 setter를 이용해서 시퀀스에서 받아온 번호를 세팅해 준다.  -->
+	  	select cash_seq.nextval from dual
+	  	</selectKey>
+	  	INSERT INTO cash (CASH_NO, CREATE_DATE, ID) 
+	  	VALUES (#{CASH_NO}, TO_DATE(sysdate, 'YYYY-MM-DD'), #{id})
+  	</insert>
+	
+	<select id="getCashInfoById" resultType="com.beetmarket.stock.vo.CashVO">
+	    SELECT CASH_NO, CREATE_DATE, MONEY, ID
+	    FROM cash
+	    WHERE ID = #{id}
+	</select>
+	
+  	<insert id="StockOrder">
+	  	<selectKey keyProperty="stock_order_no" resultType="Long" order="BEFORE">
+	  	<!-- BoardVO의 no에 setter를 이용해서 시퀀스에서 받아온 번호를 세팅해 준다.  -->
+	  	select stock_order_seq.nextval from dual
+	  	</selectKey>
+		    INSERT INTO stock_order (stock_order_no, order_date, order_status, order_type, price, stock_count, id, company_code)
+		    VALUES (#{stock_order_no}, #{order_date}, #{order_status}, #{order_type}, #{price}, #{stock_count}, #{id}, #{company_code})
+  	</insert>
+  	
+  	<select id="getOrderList" resultType="com.beetmarket.stock.vo.Stock_OrderVO">
+	    SELECT s.stock_order_no, s.company_code, c.company_name, s.order_type, s.order_status, s.price, s.stock_count, s.order_date
+	    FROM stock_order s, company c
+	    	WHERE (s.company_code = c.company_code) 
+	    	and 
+	    		s.id = #{id} ORDER BY s.order_date DESC
+	</select>
+	
+	<insert id="saveStockHold" parameterType="com.beetmarket.stock.vo.Stock_HoldVO">
+		<selectKey keyProperty="stock_hold_no" resultType="Long" order="BEFORE">
+	  	<!-- BoardVO의 no에 setter를 이용해서 시퀀스에서 받아온 번호를 세팅해 준다.  -->
+	  	select stock_hold_seq.nextval from dual
+	  	</selectKey>
+	    INSERT INTO stock_hold(stock_hold_no, order_date, price, stock_hold_cnt, id, company_code)
+	    VALUES (#{stock_hold_no}, #{order_date}, #{price}, #{stock_hold_cnt}, #{id}, #{company_code})
+	</insert>
+	
+	<select id="getStockHold" parameterType="map" resultType="com.beetmarket.stock.vo.Stock_HoldVO">
+	    SELECT * FROM stock_hold WHERE id = #{id} AND company_code = #{company_code}
+	</select>
+	
+	<update id="updateStockHoldCount" parameterType="map">
+	    UPDATE stock_hold
+	    <if test="orderType == '매수'">
+	        SET stock_hold_cnt = stock_hold_cnt + #{stockCount}
+	    </if>
+	    <if test="orderType == '매도'">
+	        SET stock_hold_cnt = stock_hold_cnt - #{stockCount}
+	    </if>
+	    WHERE id = #{id} AND company_code = #{company_code}
+	</update>
+	<update id="updateCash" parameterType="map">
+	    UPDATE cash
+	    SET money = #{money}
+	    WHERE id = #{id}
+	</update>
+	<select id="getStockHoldList" parameterType="String" resultType="com.beetmarket.stock.vo.Stock_HoldVO">
+	    SELECT s.stock_hold_no, s.company_code, i.stck_prpr ,c.company_name, s.price, s.stock_hold_cnt, s.order_date 
+		FROM stock_hold s, company c, stock_info i WHERE (s.company_code = c.company_code) and (s.company_code = i.company_code) and s.stock_hold_cnt > 0 and id = #{id}
+	</select>
+	<update id="updateStockHold" parameterType="com.beetmarket.stock.vo.Stock_HoldVO">
+	    <!-- 보유 주식의 가격과 수량을 업데이트 -->
+	    UPDATE stock_hold
+	    SET 
+	        price = #{price},               <!-- 가중 평균 가격 -->
+	        stock_hold_cnt = #{stock_hold_cnt}  <!-- 업데이트된 보유 수량 -->
+	    WHERE 
+	        id = #{id} AND                  <!-- 사용자 ID -->
+	        company_code = #{company_code}  <!-- 종목 코드 -->
+	</update>
+	    <!-- 토큰 삽입 또는 업데이트 -->
+    <update id="insertOrUpdateToken">
+		  MERGE INTO token t
+		  USING (SELECT 1 AS token_no,
+		                #{expried} AS expried,
+		                #{token_code} AS token_code
+		         FROM dual) src
+		  ON (t.token_no = src.token_no)
+		  WHEN MATCHED THEN
+		    UPDATE SET t.expried = src.expried,
+		               t.token_code = src.token_code
+		  WHEN NOT MATCHED THEN
+		    INSERT (token_no, expried, token_code)
+		    VALUES (src.token_no, src.expried, src.token_code)
+	</update>
+    <!-- 토큰을 DB에서 가져오는 메서드 -->
+    <select id="getTokenFromDB" resultType="String">
+        SELECT token_code FROM token WHERE token_no = #{token_no}
+    </select>
+    
+    <!-- 주문 상태 업데이트 -->
+    <update id="updateOrderStatus" parameterType="com.beetmarket.stock.vo.Stock_OrderVO">
+        UPDATE stock_order
+        SET order_status = #{order_status}, price = #{price}
+        WHERE stock_order_no = #{stock_order_no}
+    </update>
+	<!-- 미체결된 주문 조회 -->
+    <select id="getPendingOrders" parameterType="string" resultType="com.beetmarket.stock.vo.Stock_OrderVO">
+        SELECT * FROM stock_order
+        WHERE company_code = #{companyCode} AND order_status = '미체결'
+    </select>
+      <!-- 종목 코드에 따른 보유 수량 조회 -->
+	  <select id="getHoldingQuantity" parameterType="String" resultType="int">
+	    SELECT stock_hold_cnt
+	    FROM stock_hold
+	    WHERE company_code = #{company_code}
+	      AND id = #{id}  <!-- 로그인한 사용자 기준으로 보유 주식을 확인 -->
+	  </select>
+  </mapper>

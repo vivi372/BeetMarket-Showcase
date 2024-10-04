@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.beetmarket.pointshoporder.mapper.PointShopOrderMapper"> 
+
+	<!-- 총 주문 수 가져오기 -->
+	<select id="totalRow" resultType="Long">
+		select count(*) from pointShopOrder o,pointShopGoodsInfo g,pointShopStock s where 1=1
+		<if test="admin != 1">
+			and id=#{pageObject.accepter}
+		</if>
+		<include refid="goodsNameSearch"></include>
+		<include refid="orderDateSearch"></include>
+		<include refid="stockStateSearch"></include>
+		<include refid="categorySearch"></include>	
+		and s.goodsId = g.goodsId and o.stockNo = s.stockNo	
+	</select>
+
+	<!-- 주문 리스트 가져오기 -->
+	<select id="list" resultType="com.beetmarket.pointshoporder.vo.PointShopOrderVO">
+		select pointShoporderNo,goodsId,goodsImage,goodsName,orderDate,orderPoint,category,stockNo,stockState,id from(
+			select rownum rnum,pointShoporderNo,goodsId,goodsImage,goodsName,orderDate,orderPoint,category,stockNo,stockState,id from(
+				select o.pointShoporderNo,s.goodsId,g.goodsImage,g.goodsName,o.orderDate,o.orderPoint,g.category,o.stockNo,s.stockState,o.id
+				from pointShopOrder o,pointShopGoodsInfo g,pointShopStock s where 1=1
+				<if test="admin != 1">
+					and id=#{pageObject.accepter} 
+				</if>
+				<include refid="goodsNameSearch"></include>
+				<include refid="orderDateSearch"></include>
+				<include refid="stockStateSearch"></include>
+				<include refid="categorySearch"></include>				
+				and s.goodsId = g.goodsId and o.stockNo = s.stockNo
+				order by pointShoporderNo desc
+			)
+		) where rnum between #{pageObject.startRow} and #{pageObject.endRow}
+	</select>
+	
+	<!-- 상품 이름 검색 쿼리 -->
+	<sql id="goodsNameSearch">
+		<if test="searchVO.word != null and searchVO.word != ''.toString()">
+			and (
+			<!-- ~~/~~ 형태로 검색 한 경우 -->
+			<if test="searchVO.key != null and searchVO.key.length() == 2 and searchVO.word.indexOf('/')>0">
+				<trim prefixOverrides="and">
+					and (id = #{searchVO.id})				
+					and (goodsName like '%' || #{searchVO.goodsName} || '%')		
+				</trim>		
+			</if>
+			<if test="searchVO.word.indexOf('/') == -1">
+				<trim prefixOverrides="or">
+					<!-- key가 널일때 - 일반 리스트 or 관리자 리스트에서 key에 n이 있을때 -->
+					<if test="searchVO.key == null or searchVO.key.indexOf('n')>=0">
+						or (goodsName like '%' || #{searchVO.word} || '%')
+					</if>				
+					<if test="searchVO.key != null and searchVO.key.indexOf('o')>=0">
+						or (pointShoporderNo = #{searchVO.word})
+					</if>
+					<if test="searchVO.key != null and searchVO.key.indexOf('i')>=0">
+						or (id = #{searchVO.word})
+					</if>
+				</trim>
+			</if>
+			)
+		</if>
+	</sql>
+	
+	<!-- 구매 기간 검색 쿼리 -->
+	<sql id="orderDateSearch">		
+		and (trunc(orderDate) between #{searchVO.minDate} and trunc(#{searchVO.maxDate}))		
+	</sql>
+	
+	<!-- 상품 상태 검색 쿼리 -->
+	<sql id="stockStateSearch">	
+		<if test="searchVO.stockState != null and searchVO.stockState != ''.toString()">	
+			and (stockState = #{searchVO.stockState})	
+		</if>	
+	</sql>
+	<!-- 카테고리 검색 쿼리 -->
+	<sql id="categorySearch">	
+		<if test="searchVO.category != null and searchVO.category != ''.toString()">	
+			and (category = #{searchVO.category})	
+		</if>	
+	</sql>
+	
+	<!-- 재고 번호 가져오기 -->
+	<select id="getStockNo" resultType="com.beetmarket.pointshoporder.vo.PointShopOrderVO">
+		select pointShopOrder_SEQ.nextval pointShopOrderNo,stockNo,orderPoint,goodsId from(
+			<foreach collection="list" item="vo" separator="union all">
+				(
+					select stockNo,(select pointAmount from pointshopgoodsinfo where goodsid=#{vo.goodsId}) orderPoint,goodsId from(
+	            		(select rownum rnum,stockNo,goodsId from pointshopstock where goodsid=#{vo.goodsId} and stockState='판매중' order by stockNo)     
+	        		)where <![CDATA[ rnum <= #{vo.amount} ]]>
+	        		
+        		)
+			</foreach>
+			)
+	</select>
+	
+	<!-- 주문 등록 -->
+	<insert id="write">	
+		insert into pointShopOrder(pointShopOrderNo,stockNo,orderPoint,id)		
+		<foreach collection="values" item="vo" separator="union all">
+			select #{vo.pointShopOrderNo},#{vo.stockNo},#{vo.orderPoint},#{id} from dual
+		</foreach>		
+	</insert>
+	
+	<!-- 해당 재고 상태 수정 -->
+	<update id="stockStateUpdate">
+		update pointShopStock set stockState = #{stockState}
+		where stockNo in(
+			<foreach collection="array" item="no" separator=",">
+				#{no}
+			</foreach>
+		)
+		
+	</update>
+	
+	<!-- 구매 상품 삭제 -->
+	<delete id="delete">
+		delete from pointShopStock where stockNo = #{stockNo}
+	</delete>
+	
+	<!-- 주문 삭제 -->
+	<delete id="refundDelete">
+		delete from pointShopOrder where pointShopOrderNo = #{pointShopOrderNo}
+	</delete>
+	
+	<!-- 상품 환불 -->
+	<update id="refund">
+		update pointShopStock set stockState = '판매중' 
+		where stockNo = (
+			select stockNo from pointShopOrder where pointShopOrderNo = #{pointShopOrderNo}
+		)
+		
+	</update>
+	
+</mapper>

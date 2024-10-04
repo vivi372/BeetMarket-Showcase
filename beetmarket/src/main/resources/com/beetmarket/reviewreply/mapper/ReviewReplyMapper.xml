@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.beetmarket.reviewreply.mapper.ReviewReplyMapper">
+
+
+
+
+<!-- 리뷰 답변 리스트 -->
+<select id="list" resultType="com.beetmarket.reviewreply.vo.ReviewReplyVO">
+	select reviewReplyNO, reviewNo, id, Content, WriteDate
+	from(
+		select reviewReplyNO, reviewNo, id, Content, gooWriteDatedsNo
+		from(
+			select 
+				 rp.reviewReplyNO, r.reviewNo, m.id, rp.WriteDate
+			from
+				reviewReply rp, review r, member m
+			where 
+				(rp.orderNo = r.reviewNo) and (r.id = m.id)
+			order by reviewReplyNO desc		
+		)
+	) where rnum between  #{startRow} and #{endRow}
+</select>
+
+
+
+<!-- 답변등록 -->
+<insert id="write">
+	<selectKey keyProperty="reviewReplyNo" resultType="Long" order="BEFORE">
+		select reviewreply_seq.nextval from dual
+	</selectKey>
+		insert into review(reviewReplyNo, reviewNo, Content)
+		values(#{reviewReplyNo}, #{reviewNo}, #{Content})
+</insert>
+
+
+
+<!-- 답변수정 -->
+<update id="update">
+<![CDATA[
+	update reviewReply
+	set Content = #{Content}
+	where reviewReplyNo = #{reviewReplyNo}
+]]>
+</update>
+
+
+
+<!-- 답변삭제 -->
+<delete id="delete" parameterType="long">
+    DELETE FROM reviewReply WHERE reviewReplyNo = #{reviewReplyNo}
+</delete>
+
+</mapper>

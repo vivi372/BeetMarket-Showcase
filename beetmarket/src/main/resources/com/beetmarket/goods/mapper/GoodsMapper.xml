@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.beetmarket.goods.mapper.GoodsMapper">
+
+	<!-- 상품 리스트 -->
+	<select id="list" resultType="com.beetmarket.goods.vo.GoodsVO">
+		<!-- 상품 코드, 상품명, 대표이미지, 최종판매가, 조회수 -->
+		select
+		goodsNo, goodsName, goodsMainImage, goodsPrice, goodsHit
+		from (
+		select
+		rownum rnum, goodsNo, goodsName, goodsMainImage, goodsPrice,
+		goodsHit
+		from (
+		select
+		goodsNo, goodsName, goodsMainImage, goodsPrice,
+		goodsHit
+		from
+		goods
+		where
+		( 1=1
+		<!-- 검색을 달아야 한다. -->
+		<include refid="search" />
+		)
+		and (goodsStatusNo = 2)
+
+		order by
+		<if test="searchVO.desc == 1">
+			goodsHit desc,
+		</if>
+		goodsNo desc
+
+		)
+		)
+		where rnum between
+		#{pageObject.startRow} and
+		#{pageObject.endRow}
+	</select>
+
+	<!-- 판매자 리스트 -->
+	<select id="sellList"
+		resultType="com.beetmarket.goods.vo.GoodsVO">
+		<!-- 번호, 이미지, 상품명, 원가, 고정할인가, 할인율, 판매가, 고정적립율 -->
+		select
+
+		goodsMainImage,
+		goodsNo,
+		categoryName,
+		goodsName,
+		goodsOriPrice,
+		goodsDiscount,
+		goodsDiscRate,
+		goodsPrice,
+		goodsSavings,
+		goodsStatusName,
+		sell_no
+
+
+		from (
+		select
+		rownum rnum,
+
+		goodsMainImage,
+		goodsNo,
+		categoryName,
+		goodsName,
+		goodsOriPrice,
+		goodsDiscount,
+		goodsDiscRate,
+		goodsPrice,
+		goodsSavings,
+		goodsStatusName,
+		sell_no
+
+
+		from (
+		select
+
+		g.goodsMainImage,
+		g.goodsNo,
+		c.categoryName,
+		g.goodsName,
+		g.goodsOriPrice,
+		g.goodsDiscount,
+		g.goodsDiscRate,
+		g.goodsPrice,
+		g.goodsSavings,
+		s.goodsStatusName,
+		g.sell_no
+
+		from
+		goods g,
+		category c,
+		goodsStatus s
+		where
+		( 1=1
+		<!-- 검색을 달아야 한다. -->
+		<include refid="search" />
+		)
+		and (g.cateHighNo = c.cateHighNo and g.cateMidNo = c.cateMidNo and
+		g.cateLowNo = c.cateLowNo)
+		and (g.goodsStatusNo = s.goodsStatusNo)
+		and
+		(g.sell_no = #{sell_no})
+		)
+
+		order by goodsNo desc
+		)
+
+		where rnum between
+		#{pageObject.startRow} and
+		#{pageObject.endRow}
+	</select>
+
+	<!-- 관리자 리스트 -->
+	<select id="adminList"
+		resultType="com.beetmarket.goods.vo.GoodsVO">
+		<!-- 상품 코드, 상품명, 대표이미지, 최종판매가, 조회수 -->
+		select
+
+		goodsNo,
+		categoryName,
+		goodsName,
+		goodsOriPrice,
+		goodsDiscount,
+		goodsDiscRate,
+		goodsPrice,
+		goodsSavings,
+		id,
+		store_name,
+		goodsStatusName
+
+		from (
+		select
+
+		rownum rnum,
+		goodsNo,
+		categoryName,
+		goodsName,
+		goodsOriPrice,
+		goodsDiscount,
+		goodsDiscRate,
+		goodsPrice,
+		goodsSavings,
+		id,
+		store_name,
+		goodsStatusName
+
+		from (
+		select
+
+		g.goodsNo,
+		c.categoryName,
+		g.goodsName,
+		g.goodsOriPrice,
+		g.goodsDiscount,
+		g.goodsDiscRate,
+		g.goodsPrice,
+		g.goodsSavings,
+		h.id,
+		h.store_name,
+		s.goodsStatusName
+
+		from
+		goods g,
+		category c, goodsStatus s, seller_hub h
+		where
+		( 1=1
+		<!-- 검색을 달아야 한다. -->
+		<include refid="search" />
+		and (g.cateHighNo = c.cateHighNo and g.cateMidNo = c.cateMidNo and
+		g.cateLowNo = c.cateLowNo)
+		and (g.goodsStatusNo = s.goodsStatusNo)
+		and
+		(g.sell_no = h.sell_no)
+		)
+		order by goodsNo desc
+		)
+		)
+		where rnum between
+		#{pageObject.startRow} and
+		#{pageObject.endRow}
+	</select>
+
+	<!-- 좋아요 리스트 -->
+	<!-- 검색이 필요 없다. -->
+	<!-- 일단 다 불러오고 사용할것을 고른다. -->
+	<select id="likeList"
+		resultType="com.beetmarket.goods.vo.GoodsVO">
+		<!-- 너가 뭘 좋아할지 몰라서 다 가져왔어 메타 -->
+		select
+
+		g.goodsMainImage,
+		g.goodsNo,
+		c.categoryName,
+		g.goodsName,
+		g.goodsPrice,
+		h.store_name
+
+		from
+		goods g, category c, goodsLike l,
+		seller_hub h
+		where
+		( 1=1 )
+		and (g.cateHighNo = c.cateHighNo and	g.cateMidNo = c.cateMidNo and g.cateLowNo = c.cateLowNo)
+		and (g.goodsNo = l.goodsNo)
+		and (h.sell_no = g.sell_no)
+		and l.id = #{id}
+		order by goodsNo desc
+	</select>
+
+	<!-- 상품 리스트 페이지 처리를 위한 전체 데이터 개수 가져오기 -->
+	<select id="getTotalRow" resultType="Long">
+		select count(*)
+		from goods
+		<!-- 검색을 달아야 한다. -->
+		where (1=1)
+		<include refid="search" />
+	</select>
+
+	<!-- 상품 리스트의 검색 처리 -->
+	<sql id="search">
+		<!-- 검색 데이터가 존재하면 쿼리를 추가시킨다. -->
+		<if test="searchVO.exist">
+			and (
+			<trim prefixOverrides="and">
+				<!-- 대분류 검색 추가 -->
+				<if
+					test="searchVO.cateHighNo != null and searchVO.cateHighNo > 0">
+					cateHighNo = #{searchVO.cateHighNo}
+				</if>
+				<!-- 중분류 검색 추가 -->
+				<if test="searchVO.cateMidNo != null and searchVO.cateMidNo > 0">
+					and cateMidNo = #{searchVO.cateMidNo}
+				</if>
+				<!-- 소분류 검색 추가 -->
+				<if test="searchVO.cateLowNo != null and searchVO.cateLowNo > 0">
+					and cateLowNo = #{searchVO.cateLowNo}
+				</if>
+				<!-- 상품명 검색 추가 -->
+				<if
+					test="searchVO.goodsName != null and searchVO.goodsName != ''">
+					goodsName like '%' || #{searchVO.goodsName} || '%'
+				</if>
+			</trim>
+			)
+		</if>
+	</sql>
+
+	<!-- 상품 보기 조회수 1 증가 -->
+	<!-- # {obj} 1. 변수의 이름, 2. vo의 getter 이름, 3. Map의 key -->
+	<update id="increase">
+		update goods set goodsHit = goodsHit + #{increase}
+		where goodsNo
+		=
+		#{goodsNo}
+	</update>
+
+	<!-- 상품 정보 보기 -->
+	<select id="view" resultType="com.beetmarket.goods.vo.GoodsVO">
+		select
+		<!-- // category -->
+		g.cateHighNo,
+		g.cateMidNo,
+		g.cateLowNo,
+		c.categoryName,
+
+		<!-- // goods -->
+		g.goodsNo,
+		g.goodsName,
+		g.goodsMainImage,
+		g.goodsConImage,
+		g.goodsContent,
+		g.goodsHit,
+		g.goodsOriPrice,
+		g.goodsDiscRate,
+		g.goodsDiscount,
+		g.goodsPrice,
+		g.goodsSavings,
+		g.goodsSaveRate,
+
+		<!-- // goodsStatus -->
+		s.goodsStatusName,
+
+		<!-- seller_hub -->
+		h.id,
+		h.store_name,
+		h.merchant_delivery,
+		h.free_ship_limit
+
+		<!-- from 뒤에 사용할 수 있는 것 : 1. table, 2. select 쿼리, 3. view table -->
+		<!-- 불러와야 하는 테이블 : 1. goods, 2. goodsOption, 3. category, 4. goodsInfo, 
+			5. goodsStatus -->
+		from goods g, category c, goodsStatus s, seller_hub h
+		where (g.goodsNo
+		= #{goodsNo})
+		and (g.cateHighNo = c.cateHighNo and g.cateMidNo =
+		c.cateMidNo and g.cateLowNo = c.cateLowNo)
+		and (g.goodsStatusNo =
+		s.goodsStatusNo)
+		and (g.sell_no = h.sell_no)
+	</select>
+
+	<!-- 상품 이미지 리스트 -->
+	<select id="imageList"
+		resultType="com.beetmarket.goods.vo.GoodsImageVO">
+		select
+		goodsImageNo, goodsNo, goodsImageName
+		<!-- from 뒤에 사용할 수 있는 것 : 1. table, 2. select 쿼리, 3. view table -->
+		from goodsImage
+		where (goodsNo = #{goodsNo})
+	</select>
+	<!-- 상품 옵션 리스트 -->
+	<select id="optionList"
+		resultType="com.beetmarket.goods.vo.GoodsOptionVO">
+		select
+		goodsOptNo, goodsNo, goodsOptName, goodsOptPrice
+		<!-- from 뒤에 사용할 수 있는 것 : 1. table, 2. select 쿼리, 3. view table -->
+		from goodsOption
+		where (goodsNo = #{goodsNo})
+	</select>
+	<!-- 상품 정보 리스트 -->
+	<select id="infoList"
+		resultType="com.beetmarket.goods.vo.GoodsInfoVO">
+		select
+		goodsInfoNo, goodsNo, goodsInfoName, goodsInfoCon
+		<!-- from 뒤에 사용할 수 있는 것 : 1. table, 2. select 쿼리, 3. view table -->
+		from goodsInfo
+		where (goodsNo = #{goodsNo})
+	</select>
+
+	<!-- 1. 상품 정보 등록 -->
+	<insert id="write">
+		<!-- 먼저 GoodsVO의 no에 setter를 이용해서 시퀀스에서 받아온 번호를 세팅해 준다. -->
+		<selectKey keyProperty="goodsNo" resultType="Long"
+			order="BEFORE">
+			select goods_seq.nextval from dual
+		</selectKey>
+		INSERT INTO goods(goodsNo, cateHighNo, cateMidNo, cateLowNo,
+		goodsName,
+		goodsStatusNo, goodsMainImage, goodsConImage, goodsContent,
+		goodsOriPrice, goodsDiscRate, goodsDiscount, goodsPrice, goodsSavings,
+		goodsSaveRate, sell_no)
+		VALUES
+		(#{goodsNo}, #{cateHighNo}, #{cateMidNo},
+		#{cateLowNo}, #{goodsName},
+		1,
+		#{goodsMainImage, jdbcType=VARCHAR},
+		#{goodsConImage,
+		jdbcType=VARCHAR},
+		#{goodsContent}, #{goodsOriPrice},
+		#{goodsDiscRate},
+		#{goodsDiscount}, #{goodsPrice}, #{goodsSavings},
+		1,
+		#{sell_no}
+		<!-- 지원되는 JDBC 타입 - Null 처리가 됨. VARCHAR: 문자열, INTEGER: 정수, BIGINT: 큰 정수, 
+			DOUBLE: 실수, DATE: 날짜, TIMESTAMP: 타임스탬프, BOOLEAN: 논리형 -->
+		)
+	</insert>
+
+	<!-- 2. 상품 추가 이미지 등록 -->
+	<insert id="writeImage" parameterType="java.util.List">
+		<!-- 먼저 GoodsVO의 goods_no를 가져와서 세팅해 준다. -->
+		INSERT INTO goodsImage(goodsImageNo, goodsNo, goodsImageName)
+		select
+		goodsImage_seq.nextval, goodsNo, goodsImageName from (
+		<foreach collection="list" item="vo" separator=" union all ">
+			select
+			#{vo.goodsNo} goodsNo, #{vo.goodsImageName} goodsImageName
+			from dual
+		</foreach>
+		)
+	</insert>
+
+	<!-- 3. 상품 옵션 등록 -->
+	<insert id="writeOption">
+		<!-- 먼저 GoodsVO의 goods_no를 가져와서 세팅해 준다. -->
+		INSERT INTO goodsOption(goodsOptNo, goodsNo,
+		goodsOptName,
+		goodsOptPrice)
+		select
+		goodsOptNo_seq.nextval, goodsNo, goodsOptName,
+		goodsOptPrice from (
+		<foreach collection="list" item="vo" separator=" union all ">
+			select
+			#{vo.goodsNo} goodsNo, #{vo.goodsOptName} goodsOptName,
+			#{vo.goodsOptPrice} goodsOptPrice
+			from dual
+		</foreach>
+		)
+	</insert>
+
+	<!-- 4. 상품 정보 등록 -->
+	<insert id="writeInfo">
+		<!-- 먼저 GoodsVO의 goods_no를 가져와서 세팅해 준다. -->
+		INSERT INTO goodsInfo(goodsInfoNo, goodsNo,
+		goodsInfoName,
+		goodsInfoCon)
+		select
+		goodsInfo_seq.nextval, goodsNo, goodsInfoName,
+		goodsInfoCon from (
+		<foreach collection="list" item="vo" separator=" union all ">
+			select
+			#{vo.goodsNo} goodsNo, #{vo.goodsInfoName} goodsInfoName,
+			#{vo.goodsInfoCon} goodsInfoCon from dual
+		</foreach>
+		)
+	</insert>
+
+	<!-- 본문 업데이트 -->
+	<update id="update">
+		update goods set
+		goodsName = #{goodsName},
+		goodsOriPrice = #{goodsOriPrice},
+		goodsDiscount = #{goodsDiscount},
+		goodsDiscRate = #{goodsDiscRate},
+		goodsPrice =
+		#{goodsPrice},
+		goodsSavings = #{goodsSavings},
+		goodsStatusNo = 4
+		where goodsNo =
+		#{goodsNo}
+	</update>
+
+	<!-- 옵션업데이트 -->
+	<update id="optionUpdate">
+		update goodsOption set
+		goodOptName = #{goodsOptName},
+		goodsOptPrice = #{goodsOptPrice}
+		where goodsOptNo = #{goodsOptNo}
+	</update>
+
+	<!-- 정보 업데이트 -->
+	<update id="infoUpdate">
+		update goodsInfo set
+		goodsInfoName = #{goodsInfoName},
+		goodsInfoCon = #{goodsInfoCon}
+		where goodsInfoNo = #{goodsInfoNo}
+	</update>
+
+	<!-- 상태 업데이트 -->
+	<update id="statusUpdate">
+		update goods set goodsStatusNo = #{goodsStatusNo}
+		where goodsNo = #{goodsNo}
+	</update>
+
+	<!-- 상태 업데이트 - 삭제 판매신청 -->
+	<update id="delete">
+		update goods set goodsStatusNo = 6
+		where goodsNo =
+		#{goodsNo}
+	</update>
+
+	<!-- 좋아요 작성 -->
+	<insert id="like">
+		insert into goodsLike (goodsLikeNo, goodsNo, id)
+		values (goodsLike_seq.nextval, #{goodsNo}, #{id})
+	</insert>
+
+	<!-- 좋아요 해제 -->
+	<delete id="unLike">
+		delete from goodsLike where goodsNo = #{goodsNo} and
+		id = #{id}
+	</delete>
+
+	<select id="likeCheck" resultType="String">
+		select id from goodsLike where
+		id = #{id} and goodsNo = #{goodsNo}
+	</select>
+
+</mapper>
+

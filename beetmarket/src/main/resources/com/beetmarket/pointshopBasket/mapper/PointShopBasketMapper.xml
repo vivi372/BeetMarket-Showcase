@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.beetmarket.pointshopbasket.mapper.PointShopBasketMapper"> 
+	<!-- 장바구니 리스트 -->
+	<select id="list" resultType="com.beetmarket.pointshopbasket.vo.PointShopBasketVO">
+		select b.pointShopBasketno,b.goodsId,g.goodsName,g.goodsImage,g.pointAmount,
+		b.amount
+		from pointshopbasket b, pointShopGoodsInfo g
+		where id=#{id} and (b.goodsId = g.goodsId)
+		order by pointShopBasketno desc
+	</select>
+	
+	<!-- 장바구니 등록 -->
+	<update id="write">
+		<selectKey keyProperty="pointShopBasketNo" order="BEFORE" resultType="Long" >
+			select nvl(max(pointShopBasketno),0) from pointshopbasket where goodsid=#{goodsId} and id=#{id}
+		</selectKey>
+	
+		MERGE INTO pointshopbasket b
+		USING (
+    		SELECT #{goodsId} goodsid, #{id} id FROM dual
+		) src
+		ON (b.goodsid = src.goodsid and b.id=src.id)
+		WHEN MATCHED THEN
+    		UPDATE SET b.amount = b.amount + 1
+		WHEN NOT MATCHED THEN
+    		INSERT (b.pointshopbasketno, b.goodsid,b.id)
+    		VALUES (pointshopbasket_seq.nextval,src.goodsid, src.id)
+	</update>		
+	<!-- 장바구니 수정 -->
+	<update id="update">
+		update pointshopbasket set amount=#{amount} where pointShopBasketNo=#{pointShopBasketNo}
+	</update>
+
+	
+	<!-- 장바구니 삭제 -->
+	<delete id="delete">
+		delete from pointshopbasket where pointShopBasketNo in(
+			<foreach collection="array" item="pointShopBasketNo" separator=",">
+				 #{pointShopBasketNo}			
+			</foreach>
+		)
+	</delete>
+
+	
+</mapper>

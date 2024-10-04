@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.beetmarket.review.mapper.ReviewMapper">
+
+
+
+<!-- 리뷰 리스트 -->
+<select id="list" resultType="com.beetmarket.review.vo.ReviewVO">
+select 
+    main.reviewNo, main.WriteDate, main.starscore, main.reviewImage, main.reviewContent,replyId, main.replyContent,replyWriteDate,reviewReplyNo,
+    main.goodsNo,  main.orderNo, main.id, main.goodsName, photo, (select count(*) from review_like 
+    rl where rl.reviewNo = main.reviewNo) as likeCount 
+    from ( 
+        select r.reviewNo, r.WriteDate, r.starscore, rr.id replyId , rr.content replyContent, rr.writedate replyWriteDate,rr.reviewReplyNo,
+            r.reviewImage, r.reviewContent, o.orderNo, o.id, o.goodsNo, g.goodsName, m.photo, rownum as rnum 
+            from review r, orders o, goods g, member m,review_reply rr where 
+            <if test="goodsNo != null ">
+            	(o.goodsNo = #{goodsNo}) and            
+            </if>            	 
+         		(r.orderNo=o.orderNo) and (o.goodsNo=g.goodsNo) and (m.id = o.id) and (r.reviewNo = rr.reviewNo(+))
+            order by r.reviewNo desc 
+        ) main where main.rnum between 1 and 10
+</select>
+
+
+
+<!-- 리뷰 총개수 -->
+<select id="getTotalRow" resultType="Long">
+    select count(*)
+    from review r, orders o 
+    where o.orderNo = r.orderNo
+    <if test="goodsNo != null">
+        and o.goodsNo = #{goodsNo, jdbcType=VARCHAR}
+    </if>
+</select>
+
+
+
+<!-- 리뷰 수 조회 -->
+<select id="getCommentCount" resultType="int">
+    SELECT COUNT(*) FROM comments
+    WHERE reviewNo = #{reviewNo} and goodsNo = #{goodsNo}
+</select>
+
+
+
+<!-- 등록 -->
+<insert id="write">
+  <selectKey keyProperty="reviewNo" resultType="Long" order="BEFORE">
+    select review_seq.nextval from dual
+  </selectKey>
+  insert into review(reviewNo, reviewContent, reviewImage, starscore, orderNo)
+  values(#{reviewNo}, #{reviewContent}, #{reviewImage}, #{starscore}, #{orderNo})
+</insert>
+
+
+
+<!-- 답변 등록 -->
+<insert id="replywrite">
+  <selectKey keyProperty="reviewReplyNo" resultType="Long" order="BEFORE">
+    select review_Reply_seq.nextval from dual
+  </selectKey>
+  insert into review_Reply(reviewReplyNo, reviewNo, id, Content)
+  values(#{reviewReplyNo}, #{reviewNo}, #{replyId}, #{replyContent})
+</insert>
+
+
+
+<select id="getGoodsNoByOrderNo" resultType="Long">
+    SELECT goodsNo
+    FROM orders
+    WHERE orderNo = #{orderNo}
+</select>
+
+
+
+<!-- 주문 리뷰 존재 수정 0:리뷰 없음 1:리뷰 존재 -->
+<update id="reviewExist">
+	update orders set reviewExist=#{reviewExist} where orderNo=#{orderNo}
+</update>
+
+
+
+<!-- 수정 -->
+<update id="update">
+<![CDATA[
+	update review
+	set reviewContent = #{reviewContent}, starscore = #{starscore}
+	where reviewNo = #{reviewNo}
+]]>
+</update>
+
+
+
+<!-- 리뷰 답변 수정 -->
+<update id="replyupdate">
+	update review_Reply
+	set Content = #{replyContent}
+	where reviewReplyNo = #{reviewReplyNo}
+</update>
+
+
+
+<!-- 삭제 -->
+<delete id="delete" parameterType="long">
+    DELETE FROM review WHERE reviewNo = #{reviewNo}
+</delete>
+
+
+
+<!-- 삭제 -->
+<delete id="replydelete" parameterType="long">
+    DELETE FROM review_Reply WHERE reviewReplyNo = #{reviewReplyNo}
+</delete>
+
+</mapper>

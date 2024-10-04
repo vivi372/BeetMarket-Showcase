@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.beetmarket.goodsqna.mapper.Goods_QnaMapper">
+
+
+<!-- 댓글(상품 질문답변)리스트 -->
+<select id="list" resultType="com.beetmarket.goodsqna.vo.Goods_QnaVO">
+	select goodsQNA, goodsNo, id, question, answer, writeDate, answerDate, status
+	from(
+		select rownum rnum, goodsQNA, goodsNo, id, question, answer, writeDate, answerDate, status
+		from(
+			select 
+				gq.goodsQNA, gq.goodsNo, gq.id, gq.question, gq.answer, gq.writeDate, gq.answerDate, gq.status
+			from
+				goods_qna gq, member m
+			where
+				(goodsNo = #{goodsNo}) and (gq.id = m.id) order by goodsQNA desc		
+		)
+	) where rnum between  #{pageObject.startRow} and #{pageObject.endRow}
+</select>
+
+
+
+<!-- 상품 에서 댓글 리스트 페이지 처리를 위한 전체 데이터 개수 가져오기 -->
+<select id="getTotalRow" resultType="Long">
+	select count(*)
+	from goods_qna
+	where goodsNo = #{goodsNo}
+</select>
+
+
+
+<!-- goodsQna 등록 -->
+<insert id="write">
+	<!-- 먼저 BoardVO의 no에 setter를 이용해서 시퀀스에서 받아온 번호를 세팅해 준다. -->
+	<selectKey keyProperty="goodsQNA" resultType="Long" order="BEFORE">
+		select goods_qna_seq.nextval from dual
+	</selectKey>
+	insert into goods_qna(goodsQNA, goodsNo, question, id)
+	values(#{goodsQNA}, #{goodsNo}, #{question}, #{id})
+</insert>
+
+
+
+<!-- goodsQna 수정 -->
+<update id="update">
+<![CDATA[
+	update goods_qna
+	set question = #{question}
+	where goodsQNA = #{goodsQNA} and id = #{id}
+]]>
+</update>
+
+
+
+
+<!-- goodsQna 삭제 : 본인 댓글만 삭제 가능 -->
+<delete id="delete">
+	<![CDATA[
+	delete from goods_qna
+	where goodsQNA = #{goodsQNA} and id = #{id}
+	]]>
+</delete>
+
+
+
+<!--  답변등록 -->
+<update id="answeranupdate">
+	update goods_qna
+	set answer = #{answer}, answerDate = sysDate, status = '답변완료'
+	where goodsQNA = #{goodsQNA}
+</update>
+
+
+
+<!-- 답변부분 null -->
+<update id="answerdelete">
+	update goods_qna
+	set answer = null, answerDate = null, status = '답변대기중'
+	where goodsQNA = #{goodsQNA}
+</update>
+
+
+
+</mapper>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.beetmarket.reviewlike.mapper.ReviewLikeMapper">
+
+
+
+    <!-- 특정 리뷰의 좋아요 개수를 조회하는 쿼리 -->
+    <select id="countLikes" parameterType="java.lang.Long" resultType="int">
+        SELECT COUNT(*)
+        FROM review_like
+        WHERE reviewno = #{reviewNo}
+    </select>
+
+
+
+    <!-- 특정 리뷰에 좋아요를 추가하는 쿼리 -->
+    <insert id="addLike" parameterType="com.beetmarket.reviewlike.vo.ReviewLikeVO">
+        INSERT INTO review_like (REVIEWLIKE_NO,reviewNo, id)
+        VALUES (review_like_seq.nextval,#{reviewNo}, #{id})
+    </insert>
+
+
+
+    <!-- 특정 리뷰의 좋아요를 삭제하는 쿼리 -->
+    <delete id="removeLike" parameterType="com.beetmarket.reviewlike.vo.ReviewLikeVO">
+        DELETE FROM review_like 
+        WHERE reviewNo = #{reviewNo} AND id = #{id} 
+    </delete>
+
+
+
+    <!-- 특정 사용자가 해당 리뷰에 좋아요를 눌렀는지 확인하는 쿼리 -->
+    <select id="userHasLiked" parameterType="com.beetmarket.reviewlike.vo.ReviewLikeVO" resultType="int">
+        SELECT COUNT(*)
+        FROM review_like
+        WHERE reviewNo = #{reviewNo} AND id = #{id}
+    </select>
+
+</mapper>

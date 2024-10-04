@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.beetmarket.member.mapper.MemberMapper">
+
+	<!-- 회원관리 리스트 -->
+	<select id="list" resultType="com.beetmarket.member.vo.MemberVO">
+		select id, name, email, gender, tel,photo,status,gradeNo,gradeName,shipNo,shipName
+		from (
+			select rownum rnum, id, name, email, gender, tel,photo,status,gradeNo,gradeName,shipNo,shipName
+			from (
+				select
+					m.id, m.name, m.email, m.gender, m.tel,m.photo,m.status,
+					m.gradeNo,g.gradeName,
+					m.shipNo,s.shipName
+				from
+					member m, grade g, membership s
+					
+					where (
+					1=1
+					) and (id != #{id})
+					and (
+					m.gradeNo = g.gradeNo and m.shipNo=s.shipNo	
+					)
+				order by id desc
+			)
+		)
+		where rnum between #{pageObject.startRow} and #{pageObject.endRow}
+	</select>
+
+	<!-- 회원관리 리스트 페이지 처리를 위한 전체 데이터 개수 가져오기 -->
+	<select id="getTotalRow" resultType="Long">
+		select count(*)
+		from member m, grade g, membership s 
+		where 1=1 
+		and (m.gradeNo = g.gradeNo and m.shipNo=s.shipNo)
+	</select>
+	
+	<!-- 회원관리 등급 수정 -->
+	<update id="changeGrade">
+	<![CDATA[
+		update member
+		set gradeNo = #{gradeNo}
+		where id = #{id}
+	]]>
+	</update>
+	<!-- 회원관리 맴버쉽 수정 -->
+	<update id="changeMemeberShip">
+	<![CDATA[
+		update member
+		set shipNo = #{shipNo}
+		where id = #{id}
+	]]>
+	</update>
+
+	<!-- 회원관리 상태 수정 -->
+	<update id="changeStatus">
+	<![CDATA[
+		update member
+		set status = #{status}
+		where id = #{id}
+	]]>
+	</update>
+	<!-- 회원 최근 접속일 업데이트 -->
+	<update id="ConDateUpdate">
+	<![CDATA[
+		update member
+		set conDate = sysdate
+		where id = #{id}
+	]]>
+	</update>
+
+	<!-- 회원관리 글보기 -->
+	<select id="view" resultType="com.beetmarket.member.vo.MemberVO">
+		select m.id,m.name,m.tel,m.birth,m.regDate,m.photo,m.conDate,m.regDate,
+		m.email,m.gender,m.status,g.gradeName,s.shipName , g.gradeNo , s.shipNo
+		from member m , grade g , memberShip s
+		where id = #{id} and (m.gradeNo = g.gradeNo and m.shipNo=s.shipNo)
+	</select>
+	<!-- 나의 정보보기  -->
+	<select id="myView" resultType="com.beetmarket.member.vo.MemberVO">
+		SELECT m.id, m.name, m.photo, p.point_delta , g.gradeNo
+		FROM member m 
+		LEFT JOIN (
+		    SELECT id, SUM(point_delta) AS point_delta
+		    FROM pointList
+		    GROUP BY id
+		) p ON m.id = p.id
+		JOIN grade g ON m.gradeNo = g.gradeNo
+		WHERE m.id = #{id}
+	</select>
+
+
+	<!-- 포인트 리스트 -->
+	<select id="pointList" resultType="com.beetmarket.member.vo.PointVO">
+	select  id, pointlist_no,point_entity , point_delta ,redeemed_date
+		from (
+			select rownum rnum, id, pointlist_no,point_entity , point_delta ,redeemed_date
+			from (
+				select
+					m.id, p.pointlist_no,p.point_entity , p.point_delta ,p.redeemed_date
+				from
+					pointList p , member m
+					where (
+					m.id=#{id}
+					)
+					and (
+					m.id = p.id
+					)
+				order by pointlist_no desc
+				)
+			)	
+		where rnum between #{pageObject.startRow} and #{pageObject.endRow}
+	</select>
+
+	<select id="PointGetTotalRow" resultType="Long">
+		select count(*)
+		from pointList p , member m
+		where m.id=#{id}
+		and (m.id=p.id)
+	</select>
+
+
+
+	<!-- 회원 포인트 증감 -->
+	<insert id="pointWrite">
+		<!-- 먼저 MemberVO의 no에 setter를 이용해서 시퀀스에서 받아온 번호를 세팅해 준다. -->
+		<selectKey keyProperty="pointlist_no" resultType="Long" order="BEFORE">
+			select point_seq.nextval from dual
+		</selectKey>
+		insert into pointList(pointlist_no,point_entity , point_delta ,id)
+		values(#{pointlist_no},#{point_entity} , #{point_delta} ,#{id})
+	</insert>
+
+
+	<!-- 회원관리 로그인 -->
+	<select id="login" resultType="com.beetmarket.member.vo.LoginVO">
+		select
+		    m.id, m.name, m.photo, m.newMsgCnt, m.gradeNo, g.gradeName , s.shipNo ,s.shipName , m.email , s.sale_rate , h.sell_no
+		from member m, grade g , membership s  , seller_hub h
+		where
+		    (m.id = #{id} and m.pw = #{pw} and m.status='정상')
+		    and (m.gradeNo = g.gradeNo and m.shipNo=s.shipNo and m.id=h.id(+))
+	</select>
+
+	<!-- 회원관리 수정 -->
+	<update id="update">
+	<![CDATA[
+		update member
+		set name = #{name}, email = #{email},pw = #{pw},  birth = #{birth},tel = #{tel}
+		where id = #{id} and pw = #{pw}
+	]]>
+	</update>
+
+	<!-- 회원관리 가입 -->
+	<insert id="write">
+		insert into member(id, name, pw, gender, email,tel,photo,birth)
+		values(#{id}, #{name}, #{pw}, #{gender}, #{email}, #{tel}, #{photo}, #{birth})
+	</insert>
+
+	<!-- 아이디찾기 -->
+	<select id="idSearch" resultType="com.beetmarket.member.vo.MemberVO">
+		SELECT id FROM member WHERE name=#{name} and tel=#{tel}
+	</select>
+	
+	<select id="pwSearch" resultType="com.beetmarket.member.vo.MemberVO">
+	 	select id from member where id=#{id} and tel=#{tel} and email=#{email}
+	</select>
+
+	<update id="pwUpdate">
+	<![CDATA[
+		update member
+		set pw=#{pw}
+		where id = #{id} 
+	]]>
+	</update>
+
+	<!-- 회원관리 가입 -->
+	<insert id="seller">
+		insert into seller_hub(sell_no,id,merchant_delivery,free_ship_limit,store_name )
+		VALUES(sell_no_seq.nextval,#{id},#{merchant_delivery},#{free_ship_limit},#{store_name})
+	</insert>
+	
+	
+		<!-- 회원관리 리스트 -->
+	<select id="sellerList" resultType="com.beetmarket.member.vo.SellerVO">
+		SELECT * 
+		FROM (
+		    SELECT s.id, s.store_name, s.sell_no, s.is_pending, s.free_ship_limit, s.merchant_delivery, m.gradeNo,
+		           ROW_NUMBER() OVER (ORDER BY s.sell_no DESC) AS rnum
+		    FROM seller_hub s
+		    JOIN member m ON s.id = m.id 
+		    WHERE m.gradeNo = 1 or m.gradeNo = 5
+		)
+		where rnum between #{pageObject.startRow} and #{pageObject.endRow}
+	</select>
+	
+		<select id="SellerGetTotalRow" resultType="Long">
+		select count(*)
+		from seller_hub
+	</select>
+	
+	
+	<!-- 승인 업데이트 -->
+	<update id="is_pendingUpdate">
+	<![CDATA[
+		update seller_hub
+		set is_pending=#{is_pending}
+		where id = #{id} 
+	]]>
+	</update>
+	
+<!-- 중복체크 -->
+	<select id="idCheck" parameterType="String" resultType="int">
+		SELECT COUNT(id) FROM member WHERE id= #{id}
+	</select>
+	<select id="emailCheck" parameterType="String" resultType="int">
+		SELECT COUNT(email) FROM member WHERE email= #{email}
+	</select>
+	<select id="telCheck" parameterType="String" resultType="int">
+		SELECT COUNT(tel) FROM member WHERE tel= #{tel}
+	</select>
+
+</mapper>

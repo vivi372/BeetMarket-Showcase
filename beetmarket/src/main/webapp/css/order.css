@@ -1,0 +1,151 @@
+@charset "UTF-8";
+
+.page-link {
+  color: #999;  
+  border-color: #999;
+}
+
+.nav-link {
+	color: #03c75a;
+}
+.nav-link:hover {
+	color: #03c75a;
+}
+
+.page-item.active .page-link {
+ z-index: 1;
+ color: #fff;
+ font-weight:bold;
+ background-color: #145a32;
+  border-color: #145a32;
+ 
+}
+
+.page-link:focus, .page-link:hover {
+  color: #fff;
+  background-color: #03c75a; 
+  border-color: #03c75a;
+}
+
+#dlvySelModal input {
+	width: 100%;
+  	border: none; /* 모든 테두리 제거 */
+  	border-bottom: 2px solid #aaa; /* 아래쪽에 회색 실선 추가 */
+  	padding: 10px;
+  	transition: border-color 0.3s ease; /* 테두리 색상 변환에 애니메이션 적용 */
+}
+#dlvySelModal #sample4_postcode {
+	width: 30%;
+  	
+}
+#dlvySelModal input:focus {
+	border-bottom: 2px solid #03c75a; /* 포커스 시 하단 테두리 색상 변경 */
+	outline: none; /* 외곽선 제거 */
+ 	box-shadow: none; /* 포커스 시 생기는 특수 효과 제거 */
+}
+
+#dlvySelModal input:active {
+  background-color: transparent; /* 배경색 투명하게 설정 */
+}
+
+#dlvySelModal select {
+  	-webkit-appearance: none; /* 기본 화살표 제거 (웹킷 브라우저) */
+	-moz-appearance: none; /* 기본 화살표 제거 (파이어폭스) */
+	appearance: none; /* 기본 화살표 제거 (표준) */
+	border: none; /* 모든 테두리 제거 */
+	border-bottom: 2px solid #aaa; /* 아래쪽에 회색 실선 추가 */
+/* 	border: 1px solid #ccc; */
+	padding: 5px 10px;
+	background-color: white;
+	background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 20 20"><polygon points="0,0 20,0 10,10" fill="%2303c75a"/></svg>'); /* 녹색 화살표 추가 */
+	background-repeat: no-repeat;
+	background-position: right 10px center;
+	background-size: 10px;
+	padding-right: 30px;
+	transition: border-color 0.3s ease;
+}
+
+#dlvySelModal select:focus {
+	outline: none; /* 기본 포커스 효과 제거 */
+	border-color: #03c75a; /* 포커스 시 테두리 색상 변경 */
+	box-shadow: 0 0 5px rgba(3, 199, 90, 0.5); /* 포커스 시 그림자 효과 */
+}
+
+#dlvySelModal .custom-checkbox .custom-control-input:checked~.custom-control-label::before{
+ 	background-color: #145a32;
+    border-color: #145a32;   
+}
+
+#cancleModal input, #orderCancleModal input {
+	width: 100%;
+  	border: none; /* 모든 테두리 제거 */
+  	border-bottom: 2px solid #aaa; /* 아래쪽에 회색 실선 추가 */
+  	padding: 10px;
+  	transition: border-color 0.3s ease; /* 테두리 색상 변환에 애니메이션 적용 */
+  	border-radius: 0px;
+}
+#cancleModal input:focus, #orderCancleModal input:focus {
+	border-bottom: 2px solid #03c75a; /* 포커스 시 하단 테두리 색상 변경 */
+	outline: none; /* 외곽선 제거 */
+ 	box-shadow: none; /* 포커스 시 생기는 특수 효과 제거 */
+}
+#cancleModal input:active, #orderCancleModal input:active {
+  background-color: transparent; /* 배경색 투명하게 설정 */
+}
+
+.container input{
+	width: 100%;
+  	border: none; /* 모든 테두리 제거 */
+  	border-bottom: 2px solid #aaa; /* 아래쪽에 회색 실선 추가 */
+  	padding: 10px;
+  	transition: border-color 0.3s ease; /* 테두리 색상 변환에 애니메이션 적용 */
+  	border-radius: 0px;
+}
+#searchForm input{
+
+  	border: none; /* 모든 테두리 제거 */
+  	border-bottom: 2px solid #aaa; /* 아래쪽에 회색 실선 추가 */
+  	padding: 10px;
+  	transition: border-color 0.3s ease; /* 테두리 색상 변환에 애니메이션 적용 */
+  	border-radius: 0px;
+}
+
+.container input:focus, #searchForm input:focus {
+	border-bottom: 2px solid #03c75a; /* 포커스 시 하단 테두리 색상 변경 */
+	outline: none; /* 외곽선 제거 */
+ 	box-shadow: none; /* 포커스 시 생기는 특수 효과 제거 */
+}
+
+.container input:active, #searchForm input:active {
+  background-color: transparent; /* 배경색 투명하게 설정 */
+}
+
+.container select, #searchForm select {
+	border-radius: 0px;
+  	-webkit-appearance: none; /* 기본 화살표 제거 (웹킷 브라우저) */
+	-moz-appearance: none; /* 기본 화살표 제거 (파이어폭스) */
+	appearance: none; /* 기본 화살표 제거 (표준) */
+	border: none; /* 모든 테두리 제거 */
+	border-bottom: 2px solid #aaa; /* 아래쪽에 회색 실선 추가 */
+/* 	border: 1px solid #ccc; */
+	padding: 5px 10px;
+	background-color: white;
+	background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 20 20"><polygon points="0,0 20,0 10,10" fill="%2303c75a"/></svg>'); /* 녹색 화살표 추가 */
+	background-repeat: no-repeat;
+	background-position: right 10px center;
+	background-size: 10px;
+	padding-right: 30px;
+	transition: border-color 0.3s ease;
+}
+
+.container select:focus, #searchForm select:focus {
+	outline: none; /* 기본 포커스 효과 제거 */
+	border-color: #03c75a; /* 포커스 시 테두리 색상 변경 */
+	box-shadow: 0 0 5px rgba(3, 199, 90, 0.5); /* 포커스 시 그림자 효과 */
+}
+
+
+
+.basicAddr {
+	background-color: #145a32;
+}

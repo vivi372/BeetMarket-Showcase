@@ -1,0 +1,41 @@
+@charset "UTF-8";
+
+.payCard.active{
+    border: 3px solid #03c75a;
+}
+.payCard.BC{
+    background-color: #f5f5f5;
+    color: #ffffff;
+}
+.payCard.HANA{
+    background-color: #98ff98;
+    color: #ffffff;
+}
+.payCard.HYUNDAI{
+    background-color: #2f4f4f;
+    color: #ffffff;
+}
+.payCard.KB{
+    background-color: #f0e68c;
+    color: #ffffff;
+}
+.payCard.LOTTE{
+    background-color: #f5deb3;
+    color: #000000;
+}
+.payCard.NH{
+    background-color: #add8e6;
+    color: #ffffff;
+}
+.payCard.SAMSUNG{
+    background-color: #dcdcdc;
+    color: #000000;
+}
+.payCard.SHINHAN{
+    background-color: #87ceeb;
+    color: #ffffff;
+}
+.payCard.WOORI{
+    background-color: #40e0d0;
+    color: #ffffff;
+}

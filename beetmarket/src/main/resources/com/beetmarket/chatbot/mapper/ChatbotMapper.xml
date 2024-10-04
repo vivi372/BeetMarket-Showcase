@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.beetmarket.chatbot.mapper.ChatbotMapper">
+	<!-- 채팅방 리스트 -->
+	<select id="list" resultType="com.beetmarket.chatbot.vo.ChatbotVO">
+		SELECT cr.roomno,(
+            select max(chatno) from chatbot cb where cb.roomno=cr.roomno
+        ) chatno,
+        (
+		    SELECT max(content) FROM chatbot cb WHERE chatno=(
+		    	select max(chatno) from chatbot where roomno=cr.roomno
+		    ) and cb.roomno = cr.roomno
+		) content, (
+		    SELECT user_id FROM chatroom_user cu WHERE cu.roomno = cr.roomno AND cu.user_id !=#{id}
+		) partner, (
+			select max(acceptdate) from chatbot cb where cb.chatno=(
+                select max(chatno) from chatbot where roomno=cr.roomno
+            ) and cb.roomno=cr.roomno
+		) acceptdate, (
+			select max(sender) from chatbot cb where cb.chatno=(
+				select max(chatno) from chatbot where roomno=cr.roomno
+			)
+		) sender
+		FROM chatroom cr
+		WHERE cr.roomno IN (
+		    SELECT roomno FROM chatroom_user cru WHERE user_id = #{id} 
+            AND(
+            <![CDATA[
+                (cru.deleted IS NULL)
+                  OR (cru.deleted IS NOT NULL AND cru.deleted < (
+                      SELECT max(cb.senddate)
+                      FROM chatbot cb 
+                      WHERE cb.roomno = cru.roomno
+                  ))
+            ]]>
+            )
+		) ORDER BY cr.roomno
+	</select>
+	
+	<select id="history" resultType="com.beetmarket.chatbot.vo.ChatbotVO">
+		SELECT c.chatno, c.roomno, c.content, c.sender, user_id, acceptdate
+		FROM chatbot c, chatroom_user cru
+		WHERE cru.user_id = #{id}
+        AND (
+        <![CDATA[
+	        (cru.deleted IS NULL AND cru.deleted IS NULL)
+	        OR (cru.deleted IS NOT NULL AND cru.deleted < c.senddate)
+        ]]>
+        )
+        AND c.roomno = #{roomno}
+        and c.roomno = cru.roomno
+		ORDER BY c.chatno
+	</select>
+	
+	<update id="updateacceptdate">
+		update chatbot set acceptdate=sysdate 
+		where acceptdate is null and roomno=#{roomno} and sender!=#{id}
+	</update>
+	
+	<insert id="chating">
+		insert into chatbot(chatno, roomno, content, sender)
+		values(#{chatno}, #{roomno}, #{content}, #{sender})
+		<selectKey keyProperty="chatno" resultType="Long" order="BEFORE">
+			select chatbot_seq.nextval from dual
+		</selectKey>
+	</insert>
+	
+	<delete id="deletechating">
+		delete from chatbot where chatno=#{chatno}
+	</delete>
+	
+	<select id="searchid" resultType="com.beetmarket.member.vo.MemberVO">
+		select id from member where id=#{idinfo}
+	</select>
+	
+	<delete id="deleteroom">
+		update chatroom_user set deleted=sysdate where roomno=#{roomno} and user_id=#{id}
+	</delete>
+	
+	<insert id="addroom">
+		insert into chatroom(roomno)
+		values(#{roomno})
+		<selectKey  resultType="Long" order="BEFORE" keyProperty="roomno">
+			select chatroom_seq.nextval from dual
+		</selectKey>
+	</insert>
+	
+	<select id="getroomno">
+		select max(roomno) from chatroom
+	</select>
+	
+	<insert id="createroom">
+		insert into chatroom_user(roomno, user_id)
+		values(#{roomno}, #{user_id})
+	</insert>
+	
+	
+</mapper>

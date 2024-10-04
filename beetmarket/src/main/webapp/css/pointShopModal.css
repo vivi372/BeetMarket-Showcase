@@ -1,0 +1,63 @@
+@charset "UTF-8";
+
+#pointShopModal input, #goodsModal input{
+
+  	border: none; /* 모든 테두리 제거 */
+  	border-bottom: 2px solid #aaa; /* 아래쪽에 회색 실선 추가 */
+  	padding: 10px;
+  	transition: border-color 0.3s ease; /* 테두리 색상 변환에 애니메이션 적용 */
+  	border-radius: 0px;
+}
+
+#pointShopModal input:focus, #goodsModal input:focus {
+	border-bottom: 2px solid #03c75a; /* 포커스 시 하단 테두리 색상 변경 */
+	outline: none; /* 외곽선 제거 */
+ 	box-shadow: none; /* 포커스 시 생기는 특수 효과 제거 */
+}
+
+#pointShopModal input:active ,#goodsModal input:active{
+  background-color: transparent; /* 배경색 투명하게 설정 */
+}
+
+#goodsModal select {
+  	-webkit-appearance: none; /* 기본 화살표 제거 (웹킷 브라우저) */
+	-moz-appearance: none; /* 기본 화살표 제거 (파이어폭스) */
+	appearance: none; /* 기본 화살표 제거 (표준) */
+	border: none; /* 모든 테두리 제거 */
+	border-bottom: 2px solid #aaa; /* 아래쪽에 회색 실선 추가 */
+/* 	border: 1px solid #ccc; */
+	border-radius: 0px;
+	padding: 5px 10px;
+	background-color: white;
+	background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 20 20"><polygon points="0,0 20,0 10,10" fill="%2303c75a"/></svg>'); /* 녹색 화살표 추가 */
+	background-repeat: no-repeat;
+	background-position: right 10px center;
+	background-size: 10px;
+	padding-right: 30px;
+	transition: border-color 0.3s ease;
+}
+
+#goodsModal select:focus {
+	outline: none; /* 기본 포커스 효과 제거 */
+	border-color: #03c75a; /* 포커스 시 테두리 색상 변경 */
+	box-shadow: 0 0 5px rgba(3, 199, 90, 0.5); /* 포커스 시 그림자 효과 */
+}
+
+#goodsModal .custom-checkbox .custom-control-input:checked~.custom-control-label::before{
+ 	background-color: #03c75a;
+    border-color: #03c75a;   
+}
+
+#goodsModal .nav-link {
+	color: #03c75a;
+}
+#goodsModal .nav-link.active {
+	color: #6e707e;
+}
+#goodsModal .nav-link.active:hover {
+	color: #6e707e;
+}
+
+#goodsModal .nav-link:hover {
+	color: #03c75a;
+}

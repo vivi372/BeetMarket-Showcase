@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.beetmarket.main.mapper.MainMapper">
+
+	<!-- 메인 통합 게시판 검색 리스트 -->
+	<select id="list" resultType="com.beetmarket.main.vo.MainSearchVO">
+		select no, module, title, writeDate
+		from (
+			select rownum rnum, no, module, title, writeDate
+			from (
+				select
+					no, module, title, writeDate
+				from (
+					<!--  일반 게시판 검색 -->
+					select no, 'board' module, title, writeDate
+					from board
+					<include refid="boardSearch" />
+					union all
+					<!--  공지 사항 검색 -->
+					select no, 'notice' module, title, updateDate writeDate
+					from notice
+					<include refid="noticeSearch" />
+					union all
+					<!--  공지 사항 검색 -->
+					select no, 'qna' module, title, writeDate
+					from qna
+					where
+						<!-- 검색을 달아야 한다. -->
+						<include refid="search" />
+						<!-- 질문만 검색 -->
+						and (parentNo is null)
+				)
+				order by writeDate desc
+			)
+		)
+		where rnum between #{startRow} and #{endRow}
+	</select>
+
+	<!-- 일반 게시판 리스트 페이지 처리를 위한 전체 데이터 개수 가져오기 -->
+	<select id="getTotalRow" resultType="Long">
+		select sum(cnt)
+		from (
+			( select count(*) cnt
+			from board
+			<!-- 검색을 달아야한다. -->
+			<include refid="boardSearch" />
+			)
+			union all
+			( select count(*) cnt
+			from notice
+			<!-- 검색을 달아야한다. -->
+			<include refid="noticeSearch" />
+			)
+			union all
+			( select count(*) cnt
+			from qna
+			<!-- 검색을 달아야한다. -->
+			<include refid="qnaSearch" />
+			)
+		)			
+	</select>
+	
+	<!-- 일반 게시판 리스트의 검색 처리 -->
+	<sql id="boardSearch">
+		where
+			<!-- 검색을 달아야 한다. -->
+			<include refid="search" />
+	</sql>
+
+	<!-- 공지사항 리스트의 검색 처리 -->
+	<sql id="noticeSearch">
+		where
+			<!-- 검색을 달아야 한다. -->
+			<include refid="search" />
+			<!-- 현재 공지 -->
+			<![CDATA[
+			and (startDate <= sysdate and endDate >= trunc(sysdate))
+			]]>
+	</sql>
+
+	<!-- 질문답변 리스트의 검색 처리 -->
+	<sql id="qnaSearch">
+		where
+			<!-- 검색을 달아야 한다. -->
+			<include refid="search" />
+			<!-- 질문만 검색 -->
+			and (parentNo is null)
+	</sql>
+
+	<!-- 입력한 데이터 검색 처리 -->
+	<sql id="search">
+		(
+			title like '%' || #{word} || '%'
+			or content like '%' || #{word} || '%'
+		)
+	</sql>
+
+</mapper>

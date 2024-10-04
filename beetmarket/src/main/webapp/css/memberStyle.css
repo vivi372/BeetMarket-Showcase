@@ -1,0 +1,94 @@
+
+.centered-content {
+    width: 150px; /* 너비 설정 */
+    height: 150px; /* 높이 설정 */
+    object-fit: cover; /* 이미지 비율 유지 및 영역에 맞게 조정 */
+    background: #f0f0f0;
+    display: flex;
+    align-items: center; /* 수직 가운데 정렬 */
+    text-align: center; /* 텍스트 가운데 정렬 */
+    padding: 10px; /* 여백 추가 (선택 사항) */
+}
+.btn_1{
+    background-color: #f0f0f0; 
+    color: #333333; /* 텍스트 색상: 흰색 */
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-left: 100px;
+}
+.centered-content1 {
+    margin-left: 10px;
+    width: 150px; /* 너비 설정 */
+    height: 150px; /* 높이 설정 */
+    text-align: right; /* 텍스트를 가운데 정렬 */
+    font-weight: bold; /* 두꺼운 글자 */
+    background-color: #f0f0f0; /* 배경색 */
+    font-size: 30px; /* 글자 크기 */
+    display: flex;
+    flex-direction: column; /* 요소를 세로로 정렬 */
+    align-items: right;
+}
+.btn_2 {
+    background-color: #f0f0f0; /* 파란색 */
+    color: #1C86EE; /* 텍스트 색상: 흰색 */
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 20px;
+    cursor: pointer;
+    margin-left: 100px;
+}
+.btn_3{
+    background-color: #f0f0f0; /* 파란색 */
+    color: #1C86EE; /* 텍스트 색상: 흰색 */
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 20px;
+    cursor: pointer;
+    margin-left: 100px;
+}
+.centered-content2 {
+	margin-top:20px;
+    width: 150px; /* 너비 설정 */
+    height: 150px; /* 높이 설정 */
+    text-align: right; /* 텍스트를 가운데 정렬 */
+    font-weight: bold; /* 두꺼운 글자 */
+    background-color: #f0f0f0; /* 배경색 */
+}
+.centered-content3 {
+	margin-top:20px;
+    width: 150px; /* 너비 설정 */
+    height: 150px; /* 높이 설정 */
+    text-align: right; /* 텍스트를 가운데 정렬 */
+    font-weight: bold; /* 두꺼운 글자 */
+    background-color: #f0f0f0; /* 배경색 */
+}
+.thick-line {
+    border: none;
+    height: 4px;
+    background-color: #ccc;
+    width: 100%; /* 가로 길이를 부모 크기로 설정 */
+    margin: 20px 0;
+}
+.btn_3 {
+    margin-bottom: 10px;     
+    text-align: center;
+}
+.nav-links {
+    display: flex;
+    gap: 50px; /* 링크들 사이의 간격 조정 */
+    justify-content: center; /* 가운데 정렬 */
+     padding: 20px; /* 상하 여백 추가 (선택 사항) */
+     font-family: 'Open Sans', sans-serif;
+     
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: black;
+    font-size: 30px; /* 글자 크기 조정 */
+}

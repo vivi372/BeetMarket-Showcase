@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.beetmarket.faq.mapper.FaqMapper">
+	<select id="list" resultType="com.beetmarket.faq.vo.FaqVO">
+		select faqno, cateno, catename, question, answerline, writedate
+		from(
+			select rownum rnum, faqno, cateno, catename, question, answerline, writedate
+			from(
+				select faqno, f.cateno, catename, question, answerline, writedate
+				from faq f, faq_cate c
+				where 1=1
+				 <include refid="getcate"/>
+				 <include refid="search"/>
+				 and f.cateno=c.cateno
+				order by hit desc, faqno desc
+			)) where rnum between 
+			<if test="searchvo.ismain==1">
+				1 and 3
+			</if>
+			<if test="searchvo.ismain!=1">
+				#{po.startRow} and #{po.endRow}
+			</if>
+	</select>
+	<select id="getTotalRow" resultType="Long">
+		select count(*) from faq where 1=1 <include refid="search"/>
+	</select>
+	
+	<sql id="getcate">
+		<if test="searchvo.cateno!=null">
+		and f.cateno=#{searchvo.cateno}
+		</if>
+	</sql>
+	
+	<sql id="search">
+	<!-- search 데이터 존재 여부 판단 -->
+		<if test="searchvo.searchword!=null and searchvo.searchword!=''.toString()">
+			and (
+			<trim prefixOverrides="or">
+		  <!-- 선택한 key에 따라 붙이는 쿼리가 달라짐 -->
+				<if test="searchvo.searchkey.indexOf('q')>=0">
+					or question like '%'||#{searchvo.searchword}||'%'
+				</if>
+				<if test="searchvo.searchkey.indexOf('a')>=0">
+					or answer like '%'||#{searchvo.searchword}||'%'
+				</if>
+			</trim>
+			)
+		</if>
+	</sql>
+	
+	
+	<select id="view" resultType="com.beetmarket.faq.vo.FaqVO">
+		select f.faqno, f.cateno, catename, question, answerline, answer, writedate
+		from faq f, faq_cate c
+		where f.faqno=#{faqno} and (f.cateno=c.cateno)
+	</select>
+	<update id="updatehit">
+		update faq set hit=hit+1 where faqno=#{faqno}
+	</update>
+	
+	<select id="getcate" resultType="com.beetmarket.faq.vo.FaqCateVO">
+		select cateno, catename from faq_cate
+	</select>
+	
+	<insert id="write">
+		insert into faq(faqno, cateno, question, answerline, answer)
+		values(#{faqno}, #{cateno}, #{question}, #{answerline}, #{answer})
+		<selectKey keyProperty="faqno" order="BEFORE" resultType="Long">
+			select faq_seq.nextval from dual
+		</selectKey>
+	</insert>
+	
+	<update id="update">
+		update faq set cateno=#{cateno}, question=#{question},
+		answer=#{answer}, answerline=#{answerline} where faqno=#{faqno}
+	</update>
+	
+	<delete id="delete">
+		delete from faq where faqno=#{faqno}
+	</delete>
+</mapper>

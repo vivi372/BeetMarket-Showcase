@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.beetmarket.dlvy.mapper.DlvyMapper"> 
+
+	<select id="list" resultType="com.beetmarket.dlvy.vo.DlvyVO">
+		select dlvyAddrNo,dlvyName,recipient,tel,addr,addrDetail,postNo,basic 
+		from dlvyAddr where id = #{id} order by basic desc, dlvyAddrNo desc		
+	</select>  
+	
+	<insert id="write">
+		insert into dlvyAddr(dlvyAddrNo,dlvyName,id,recipient,tel,addr,addrDetail,postNo,basic)
+		values(dlvyAddr_seq.nextval,#{dlvyName},#{id},#{recipient},#{tel},#{addr},#{addrDetail},#{postNo},#{basic})
+	</insert>
+	
+	<!-- 다른 기본 배송지를 일반 배송지로 바꾸는 쿼리 -->
+	<update id="change_basic">
+		update dlvyAddr set basic = 0 where basic = 1 and id=#{id}
+	</update>
+	
+	<select id="view" resultType="com.beetmarket.dlvy.vo.DlvyVO">
+		select dlvyAddrNo,dlvyName,recipient,tel,addr,addrDetail,postNo,basic from dlvyAddr where dlvyAddrNo=#{dlvyAddrNo}
+	</select>
+	
+	<update id="update">
+		update dlvyAddr set 
+		dlvyName=#{dlvyName},recipient=#{recipient},tel=#{tel},addr=#{addr},addrDetail=#{addrDetail},postNo=#{postNo},basic=#{basic} 
+		where dlvyAddrNo=#{dlvyAddrNo}
+	</update>
+	
+	<delete id="delete">
+		delete from dlvyAddr where dlvyAddrNo=#{dlvyAddrNo}
+	</delete>
+	
+</mapper>

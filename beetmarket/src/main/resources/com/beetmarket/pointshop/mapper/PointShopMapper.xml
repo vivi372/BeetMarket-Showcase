@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.beetmarket.pointshop.mapper.PointShopMapper"> 
+
+	<select id="list" resultType="com.beetmarket.pointshop.vo.PointShopVO">
+		select g.goodsId,goodsName,goodsImage,pointAmount,category,discountRate,nvl(shipNo,0) shipNo,stopSell,
+		<!-- 해당 상품의 재고를 구하는 서브쿼리 -->
+		(select count(*) goodsStock from PointShopStock s where stockState='판매중' and s.goodsId = g.goodsId)
+		 goodsStock
+		from PointShopGoodsInfo g 
+		where 1=1 
+		<if test="gradeNo == null or gradeNo != 9">
+			and stopSell = 0 		
+		</if>
+		<include refid="search"/>
+		<include refid="cateSelect"/>
+		order by shipNo,category desc, goodsId desc
+	</select>  
+	
+	<select id="getPoint" resultType="long">
+		select nvl(sum(point_delta),0) from pointList where id=#{id}
+	</select>
+	
+	<!-- 상품 이름 검색 쿼리 -->
+	<sql id="search">		
+		<if test="vo.goodsName != null and vo.goodsName != ''.toString()">
+			and goodsName like '%' || #{vo.goodsName} || '%'
+		</if>	
+	</sql>
+	
+	<!-- 카테고리 검색 쿼리 -->
+	<sql id="cateSelect">
+		<if test="vo.category != null and vo.category != ''.toString()">
+			and category = #{vo.category}
+		</if>
+	</sql>
+	
+	<insert id="goodsWrite">
+		<selectKey order="BEFORE" resultType="Long" keyProperty="goodsId">
+			select pointShopGoodsInfo_seq.nextval from dual
+		</selectKey>
+		insert into pointshopgoodsinfo
+		(goodsId,category,goodsName,goodsImage,pointAmount,discountRate,shipNo)
+		VALUES(#{goodsId},#{category},#{goodsName},#{goodsImage},
+		#{pointAmount},#{discountRate,jdbcType=INTEGER},#{shipNo,jdbcType=INTEGER})
+		
+	</insert>
+	
+	<insert id="stockWrite" parameterType="hashMap">
+		<selectKey order="BEFORE" resultType="String" keyProperty="category">
+			select category from pointshopgoodsinfo where goodsId=#{list[0].goodsId}
+		</selectKey>
+	
+		insert into PointShopStock
+			(StockNo,goodsId)
+			select value.* from(    
+			    (
+			    	<foreach collection="list" item="vo" separator="union all" index="i" >
+			        	select (
+			        		select nvl(max(StockNo),
+			        			<if test="category == '쿠폰'">0</if>
+			        			<if test="category == '상품권'">100000000000</if>
+			        			<if test="category == '음식'">1000000000000000</if>
+			        		)+1+#{i}  
+			        		from PointShopStock s,pointShopGoodsInfo g
+			        		where g.category = #{category} and (s.goodsId = g.goodsId)
+			        	) StockNo ,#{vo.goodsId}  goodsId from dual			    	
+			    	</foreach>        	
+			       
+			    ) value
+			)
+	</insert>
+	
+	<update id="update">
+		update pointShopGoodsInfo set 
+			category=#{category},goodsName=#{goodsName},
+			<if test="goodsImage != null and goodsImage != ''.toString">
+				goodsImage = #{goodsImage},
+			</if>
+			pointAmount = #{pointAmount},discountRate=#{discountRate,jdbcType=INTEGER},shipNo=#{shipNo,jdbcType=INTEGER}
+		where goodsId = #{goodsId}
+	</update>
+	
+	<!-- 재고를 삭제 -->
+	<delete id="deleteStock">
+		delete from pointshopstock where stockno in(
+			select stockNo from(
+    			select rownum rnum,stockNo from(
+        			select stockNo  from pointshopstock WHERE goodsId=#{goodsId} and stockState='판매중' order by stockno
+    			)
+			) where <![CDATA[rnum <= #{goodsStock} ]]> 
+		)
+	</delete>
+	
+	<update id="delete">
+		update pointShopGoodsInfo set stopSell = 
+		<if test="stopSell == 0">1</if>
+		<if test="stopSell == 1">0</if>
+		where goodsId = #{goodsId}
+	</update>
+	
+	<delete id="realDelete">
+		delete from pointShopGoodsInfo where goodsId = #{goodsId}
+	</delete>
+	
+	
+	
+	
+	
+	
+	
+</mapper>

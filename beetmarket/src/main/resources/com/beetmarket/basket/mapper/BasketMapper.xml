@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.beetmarket.basket.mapper.BasketMapper"> 
+  
+  <!-- 장바구니 리스트 -->
+  <select id="basketList" resultType="com.beetmarket.basket.vo.BasketVO">
+  		select b.basketNo, b.goodsNo,
+
+  		 g.goodsName, s.store_name, s.free_ship_limit,s.merchant_delivery, g.goodsmainImage,g.goodsPrice,
+  		 bo.goodsoptNo optNo, go.goodsoptName optName,go.goodsoptPrice optPrice, bo.amount ,
+		(select max(bm.basketNo) from basket bm, goods gm where gm.sell_no=g.sell_no and (bm.goodsNo = gm.goodsNo)) maxNo
+		from basket b, goods g, goodsOption go, basketOpt bo , seller_hub s
+		where (b.id=#{id}) and (b.goodsNo = g.goodsNo) 
+		and (go.goodsoptNo(+) = bo.goodsoptNo) and (b.basketNo = bo.basketNo) and (g.sell_no = s.sell_no) order by maxno desc,b.basketNo desc
+
+	
+  </select>  
+  
+  <!-- 판매 불가능한 상품이 존재하는 장바구니 삭제 -->
+  <delete id="unsoldBasket">
+  	delete from basket where goodsNo in (
+  		select b.goodsNo from basket b, goods g 
+        where not goodsStatusNo=2 and g.goodsNo=b.goodsNo and b.id=#{id}
+  	)
+  </delete>
+  
+  
+  <select id="optList" resultType="com.beetmarket.basket.vo.AjaxOptVO">
+  	 select go.goodsoptNo optNo,go.goodsoptName optName,go.goodsoptPrice optPrice,g.goodsNo,g.goodsPrice from goodsOption go,goods g
+  	where g.goodsNo = #{goodsNo} and (g.goodsNo = go.goodsNo(+))
+  </select>
+  
+  <insert id="basketWrite">
+  	<!-- 먼저 vo의 no의 setter을 이용해서 시퀀스에서 받아온 번호를 세팅해 준다. -->
+  	<selectKey keyProperty="basketNo" order="BEFORE" resultType="Long">
+  		select basket_seq.nextval from dual
+  	</selectKey>
+  	
+  	insert into basket(basketNo,goodsNo,id)
+  	 values(#{basketNo} ,#{goodsNo},#{id}) 
+  </insert>
+  
+  <insert id="optWrite">  	
+  	insert into basketOpt(basketOptNo,goodsoptNo,amount,basketNo)
+  		select basketOpt_seq.nextval,goodsoptNo,amount,(select max(basketNo) from basket)
+  		from(
+  			<trim prefixOverrides="union all">
+	  			<foreach collection="list" item="vo">
+	  				union all select <if test="vo.optNo != 0">	  					
+		  					#{vo.optNo,jdbcType=BIGINT} 
+	  					</if>
+	  					<if test="vo.optNo == 0">	  					
+		  					null
+	  					</if>
+	  					 goodsoptNo , #{vo.amount} amount from dual
+	  			</foreach>
+  			</trim>
+  		)
+  </insert>
+  
+  
+  <delete id="optUpdate1">
+  	delete from basketOpt where basketNo=${list[0].basketNo}
+  </delete>
+  
+  <insert id="optUpdate2">
+  	insert into basketOpt(basketOptNo,goodsoptNo,amount,basketNo)
+  		select basketOpt_seq.nextval,goodsoptNo,amount,${list[0].basketNo}
+  		from(
+  			<trim prefixOverrides="union all">
+	  			<foreach collection="list" item="vo">
+	  				union all select 
+	  					<if test="vo.optNo != 0">	  					
+		  					#{vo.optNo,jdbcType=BIGINT} 
+	  					</if>
+	  					<if test="vo.optNo == 0">	  					
+		  					null
+	  					</if>
+	  				goodsoptNo, #{vo.amount} amount from dual
+	  			</foreach>
+  			</trim>
+  		)
+  </insert>
+  
+  <delete id="basketDelete">
+  	delete from basket where basketNo in(
+  		<trim prefixOverrides=",">
+  			<foreach collection="list" item="vo">
+  				,${vo.basketNo}
+  			</foreach>
+		</trim>
+  	)
+  </delete>
+ 
+  
+</mapper>
