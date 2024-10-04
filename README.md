@@ -59,7 +59,11 @@
   
 <summary>장바구니</summary>
 
++ 장바구니 리스트
+<img src="readmeAssets/장바구니 리스트.png" width="600" style="">
 
++ 장바구니 등록
+<img src="readmeAssets/장바구니 등록.png" width="600" style="">
 
 </details>
 
@@ -67,6 +71,11 @@
   
 <summary>주문관리</summary>
 
++ 주문 관리 페이지
+<img src="readmeAssets/주문 관리.png" width="600" style="">
+
++ 주문 등록
+<img src="readmeAssets/주문 등록.png" width="600" style="">
 
 </details>
 
@@ -74,47 +83,180 @@
   
 <summary>포인트샵</summary>
 
++ 포인트샵
+<img src="readmeAssets/포인트샵 리스트.png" width="600" style="">
+
++ 포인트샵 장바구니
+<img src="readmeAssets/포인트샵 장바구니.png" width="600" style="">
+
++ 포인트샵 주문 리스트
+<img src="readmeAssets/포인트샵 주문 리스트.png" width="600" style="">
+
++ 포인트샵 주문 관리 페이지
+<img src="readmeAssets/포인트샵 주문 관리.png" width="600" style="">
+
 
 </details>
 
 # 주요 기능
 
-+ ajax를 사용해 비동기 방식으로 배송지 관련 CRUD를 구현해 결제시 입력한 데이터를 유지시킨 상태로 배송지 등록,수정,삭제가 가능
-+ 책 같은 경우 ISBN이 존재하고 티켓은 관람일이 필요하기 때문에 주문 데이터 출력시 다른 정보를 출력이 가능
-+ 상품의 옵션이 존재할 경우 여러개의 옵션이 선택이 가능
++ 상품의 적립율과 등급에 따른 적립율을 DB에서 가져와 계산하여 적립율이 달라져도 달라진 적립율로 계산이 가능
++ 카드 간편 결제 시스템에서 BIN API를 이용해 입력한 카드 번호를 기반으로 카드에 대한 정보를 GUI로 출력이 가능
++ 토스 결제 위젯 기반의 결제 시스템 도입
+
+---
+
++ Ajax와 Modal을 활용해 사이트 어디에서도 페이지 이동없이 포인트샵에 접근이 가능
++ 포인트샵의 상품 리스트와 장바구니에 각각의 스크롤을 위치시켜 서로 독립
 
 # 중요 코드
 
+### 장바구니 다중 옵션 등록
+
+```xml
+<insert id="optWrite">  	
+  	insert into basketOpt(basketOptNo,goodsoptNo,amount,basketNo)
+  		select basketOpt_seq.nextval,goodsoptNo,amount,(select max(basketNo) from basket)
+  		from(
+  			<trim prefixOverrides="union all">
+	  			<foreach collection="list" item="vo">
+	  				union all select <if test="vo.optNo != 0">	  					
+		  					#{vo.optNo,jdbcType=BIGINT} 
+	  					</if>
+	  					<if test="vo.optNo == 0">	  					
+		  					null
+	  					</if>
+	  					 goodsoptNo , #{vo.amount} amount from dual
+	  			</foreach>
+  			</trim>
+  		)
+</insert>
+
 ```
-//basketOpt 테이블의 데이터를 수정하는 퀴리문을 가져오는 메서드
-	private String getOptUpdateSql(List<OptVO> optList) {
-		//옵션 테이블에서 수정할 장바구니의 번호를 가져온다.
-		long basketNo = optList.get(0).getBasketNo();
-		//MERGE INTO targetTable using(sourceTable) on 조건 WHEN MATCHED THEN update/delete  WHEN NOT MATCHED THEN insert
-		//- targetTable과  sourceTable 테이블을 조건을 통해 비교하여 조건에 맞으면 업데이트나 삭제를 진행하고 틀리면 등록한다.
-		String sql ="MERGE INTO basketOpt t "
-				+ "		USING ( ";
-		//가져온 옵션 리스트로 sourceTable 생성
-		for(int i=0;i<optList.size();i++) {
-			OptVO opt = optList.get(i);
-			if(i==0) sql += "select "+(i+1)+" rnum, "+opt.getOptNo()+" optNo, "+opt.getAmount()+" amount, "+basketNo+" basketNo from dual ";
-			else sql += " union all select "+(i+1)+", "+opt.getOptNo()+", "+opt.getAmount()+", "+basketNo+" from dual ";
-		}
-		sql +=" ) s "
-				//입력된 basketNo인 타겟 테이블의 순서번호가 소스테이블에 존재하면 소스테이블에 데이터를 타켓 테이블에 집어넣고
-			+ " ON (s.rnum = (select rnum from(select rownum rnum,basketOptno from basketOpt where basketNo = "+basketNo+") where basketOptno = t.basketOptNo) and t.basketNo = "+basketNo+") "
-			+ " WHEN MATCHED THEN "
-			+ "    UPDATE SET t.optNo = s.optNo, t.amount = s.amount "
-			//존재하지 않으면 소스테이블에 데이터를 basketOpt에서 새로 등록한다.
-			+ " WHEN NOT MATCHED THEN "
-			+ "    INSERT (basketOptNo, optNo, amount, basketNo) "
-			+ "    VALUES (basketOpt_seq.nextval, s.optNo, s.amount, "+basketNo+")";
-		
-		return sql;
+
+장바구니의 옵션 등록시 다중 등록이 필요하다. 다중 등록을 위해 sql union all과 마이바티스의 foreach를 사용해서 다중 등록을 구현.
+또한 상품에 옵션이 없는 경우 null을 입력하되 수량은 입력하여 장바구니에서 수량이 입력되게 구현.
+
+### 카드 간편 결제 출력
+
+```html
+
+	<c:forEach items="${list }" var="vo" varStatus="vs">
+		<div class="beetCard">
+			<div class="payCard rounded-lg ${vo.cardCompany } ${(vs.index==0)?active:'' }" 
+				data-beetpayno="${vo.beetpayNo }" data-cardcompany="${vo.cardCompany}">
+				<img src="/upload/beetpay/${vo.cardCompany }.png" class="cardImage">
+				<span class="cardNumber">${vo.cardNumber }</span>
+				<img src="/upload/beetpay/${vo.cardBrand }.png" class="cardBrand">
+			</div>
+			<select class="form-control mt-2 installmentSelect">
+				    <option>일시불</option>
+					<c:if test="${vo.cardType == '신용 카드' }">
+					    <option value="2개월">2개월 무이자</option>
+					    <option value="3개월">3개월 무이자</option>
+					    <option>4개월</option>
+					    <option>5개월</option>
+					    <option>6개월</option>
+					    <option>7개월</option>
+					    <option>8개월</option>
+					    <option>9개월</option>
+					    <option>10개월</option>
+					    <option>11개월</option>
+					    <option>12개월</option>
+					</c:if>
+			</select>					
+		</div>
+	</c:forEach>
+
+```
+
+```css
+
+.payCard.active{
+    border: 3px solid #03c75a;
+}
+.payCard.BC{
+    background-color: #f5f5f5;
+    color: #ffffff;
+}
+.payCard.HANA{
+    background-color: #98ff98;
+    color: #ffffff;
+}
+.payCard.HYUNDAI{
+    background-color: #2f4f4f;
+    color: #ffffff;
+}
+.payCard.KB{
+    background-color: #f0e68c;
+    color: #ffffff;
+}
+.payCard.LOTTE{
+    background-color: #f5deb3;
+    color: #000000;
+}
+.payCard.NH{
+    background-color: #add8e6;
+    color: #ffffff;
+}
+.payCard.SAMSUNG{
+    background-color: #dcdcdc;
+    color: #000000;
+}
+.payCard.SHINHAN{
+    background-color: #87ceeb;
+    color: #ffffff;
+}
+.payCard.WOORI{
+    background-color: #40e0d0;
+    color: #ffffff;
+}
+
+```
+
+간편 결제에 등록된 카드를 출력시 해당 카드의 정보를 가져와 div의 클래스와 이미지의 src에 입력한다.
+
+입력후 css와 업로드 되어있던 이미지를 이용해 카드의 디자인을 정보에 맞게 출력한다. 
+
+### 포인트샵 상품 등록
+
+```js
+
+	//이미지 파일을 가져온다.
+	let goodsImageFile = document.getElementById('goodsImageInput').files[0];
+	
+	
+	
+	//console.log(goodsImageFile);
+	
+	//form에 입력된 데이터를 가져와 formData1에 저장
+	formData1.append("goodsName",$("#goodsNameInput").val());
+	formData1.append("goodsImageFile",goodsImageFile);
+	formData1.append("pointAmount",$("#pointAmountInput").val());
+	formData1.append("goodsStock",$("#goodsStockInput").val());
+	formData1.append("category",$("#cateInput").val());
+	formData1.append("shipNo",$("#goodsGradeInput").val());
+	formData1.append("discountRate",$("#discountRateInput").val());			
+	
+	
+	let keys = formData1.values();
+	for(let i of keys) {
+		console.log(i);
 	}
+	//상품을 등록
+	service.write(function(data) {
+		alert(data);	
+		let goodsName =  $("#pointShopSearch").val();	
+		let cate = $(".modal-sidebar .cateActive").data("category");	
+		//등록후 리스트 출력
+		service.list(showList,goodsName,cate);
+		//등록후 모달창 닫기
+		$("#goodsModal").modal("hide");
+	}
+	,formData1);
 
 ```
 
-장바구니의 옵션 수정시 기존의 테이블의 옵션 데이터와 입력된 옵션 테이블의 행의 수를 비교하여 
+포인트샵에 아작스를 이용해 상품 등록할때 이미지 파일도 함께 업로드해야 한다. 
+files[0]을 이용해 input 태그의 이미지를 가져와 FormData에 넣어 아작스를 이용해 서버에 보낸다. 
 
-입력된 테이블의 행이 더 많으면 그만큼 새로 insert하고 존재하는 행들은 update한다.
